@@ -1,0 +1,259 @@
+/* SubjectsPage.module.css */
+
+.page {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.75rem;
+  align-items: start;
+  max-width: 1100px;
+}
+
+/* ── Painel de formulário ────────────────────────────────── */
+.formCard {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+  animation: fadeIn 0.25s ease;
+}
+.formTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.1rem;
+}
+.formError {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* Emoji grid */
+.emojiGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.emojiBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), border-color var(--transition);
+}
+.emojiBtn:hover    { background: var(--color-bg-hover); }
+.selectedEmoji     { background: var(--color-accent-light) !important; border-color: var(--color-accent) !important; }
+
+/* Color palette */
+.colorPalette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+.colorSwatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: transform var(--transition), border-color var(--transition);
+  cursor: pointer;
+}
+.colorSwatch:hover { transform: scale(1.15); }
+.selectedColor {
+  border-color: #fff !important;
+  box-shadow: 0 0 0 2px var(--color-accent);
+  transform: scale(1.1);
+}
+
+.customColor {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.colorInput {
+  width: 36px;
+  height: 36px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.colorHex {
+  width: 90px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.colorPreview {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Form actions */
+.formActions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--color-border);
+}
+.cancelBtn {
+  background: var(--color-bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+.cancelBtn:hover { background: var(--color-bg-hover); }
+.saveBtn {
+  background: var(--color-accent);
+  color: #fff;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+.saveBtn:hover:not(:disabled) { background: var(--color-accent-hover); }
+
+/* ── Lista ────────────────────────────────────────────────── */
+.listSection { display: flex; flex-direction: column; gap: 1rem; }
+.listTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.count {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.error {
+  color: var(--color-danger);
+  font-size: 0.88rem;
+}
+.empty {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  padding: 1rem 0;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.subjectCard {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background var(--transition), box-shadow var(--transition);
+  animation: fadeIn 0.2s ease;
+}
+.subjectCard:hover { background: var(--color-bg-hover); box-shadow: var(--shadow-sm); }
+.subjectCard.editing {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-light);
+}
+
+.subjectMain {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.subjectEmoji { font-size: 1.3rem; flex-shrink: 0; }
+.subjectInfo  { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.subjectName  { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+.subjectColor { font-size: 0.72rem; font-family: var(--font-mono); }
+.colorDot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.subjectActions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+.editBtn, .deleteBtn {
+  background: none;
+  padding: 0.25rem 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  transition: background var(--transition);
+  opacity: 0;
+}
+.subjectCard:hover .editBtn,
+.subjectCard:hover .deleteBtn { opacity: 1; }
+.editBtn:hover   { background: var(--color-accent-light); }
+.deleteBtn:hover { background: var(--color-danger-bg); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .page { grid-template-columns: 1fr; }
+  .formCard { position: static; }
+}

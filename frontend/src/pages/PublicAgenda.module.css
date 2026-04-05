@@ -1,0 +1,16 @@
+/* PublicAgenda.module.css */
+.page { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-bg-primary); }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border); }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.badge { font-size: 0.7rem; background: var(--color-accent-light); color: var(--color-accent); padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+.loginBtn { background: var(--color-accent); color: #fff; padding: 0.4rem 1rem; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 600; }
+.loginBtn:hover { background: var(--color-accent-hover); }
+.content { flex: 1; padding: 1.5rem 2rem; max-width: 1100px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 1rem; }
+.nav { display: flex; align-items: center; gap: 0.75rem; }
+.nav button { background: var(--color-bg-card); border: 1px solid var(--color-border); color: var(--text-secondary); width: 32px; height: 32px; border-radius: var(--radius-sm); font-size: 1.1rem; }
+.nav button:hover { background: var(--color-bg-hover); color: var(--text-primary); }
+.monthTitle { flex: 1; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); text-transform: capitalize; }
+.todayBtn { width: auto !important; padding: 0 0.75rem !important; font-size: 0.8rem !important; }
+.loading { text-align: center; padding: 3rem; color: var(--text-secondary); }
+.info { text-align: center; font-size: 0.82rem; color: var(--text-secondary); padding: 0.5rem; }
+.inlineLink { background: none; color: var(--color-accent); font-size: 0.82rem; text-decoration: underline; }

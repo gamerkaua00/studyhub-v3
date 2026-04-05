@@ -1,0 +1,180 @@
+/* ============================================================
+   StudyHub — global.css
+   Design system: dark theme, Discord-inspired palette
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Cores primárias */
+  --color-bg-primary:    #0f1117;
+  --color-bg-secondary:  #161b22;
+  --color-bg-tertiary:   #1c2333;
+  --color-bg-card:       #1e2433;
+  --color-bg-hover:      #252d3d;
+  --color-border:        #30363d;
+  --color-border-light:  #21262d;
+
+  /* Marca */
+  --color-accent:        #5865F2;
+  --color-accent-hover:  #4752C4;
+  --color-accent-light:  rgba(88, 101, 242, 0.15);
+
+  /* Semânticas */
+  --color-success:       #57F287;
+  --color-success-bg:    rgba(87, 242, 135, 0.1);
+  --color-warning:       #FEE75C;
+  --color-warning-bg:    rgba(254, 231, 92, 0.1);
+  --color-danger:        #ED4245;
+  --color-danger-bg:     rgba(237, 66, 69, 0.1);
+  --color-info:          #00AFF4;
+  --color-info-bg:       rgba(0, 175, 244, 0.1);
+
+  /* Tipos de conteúdo */
+  --color-aula:    #5865F2;
+  --color-revisao: #57F287;
+  --color-prova:   #ED4245;
+
+  /* Texto */
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted:     #484f58;
+
+  /* Tipografia */
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --header-height: 60px;
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+
+  /* Transições */
+  --transition: 0.18s ease;
+  --transition-slow: 0.32s ease;
+
+  /* Sombras */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+}
+
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--color-bg-secondary); }
+::-webkit-scrollbar-thumb  { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Links */
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* Inputs e selects base */
+input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.85rem;
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+select option {
+  background: var(--color-bg-secondary);
+}
+
+/* Botão base */
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-md);
+  transition: background var(--transition), transform var(--transition), opacity var(--transition);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Labels */
+label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Animações globais */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.fade-in  { animation: fadeIn 0.25s ease forwards; }
+.slide-in { animation: slideIn 0.25s ease forwards; }
+
+/* Utilitários */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+}

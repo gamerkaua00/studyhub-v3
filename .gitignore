@@ -1,0 +1,7 @@
+.env 
+backend/.env 
+bot/.env 
+frontend/.env 
+node_modules/ 
+bot-v3.zip 
+bot-v2.zip 

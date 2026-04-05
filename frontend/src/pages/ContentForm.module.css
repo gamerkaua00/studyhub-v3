@@ -1,0 +1,181 @@
+/* ContentForm.module.css */
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 4rem;
+  color: var(--text-secondary);
+}
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  animation: fadeIn 0.25s ease;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.backBtn {
+  background: none;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.2rem 0;
+  width: fit-content;
+  transition: color var(--transition);
+}
+.backBtn:hover { color: var(--text-primary); }
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+/* ── Mensagens ───────────────────────────────────────────── */
+.successMsg {
+  background: var(--color-success-bg);
+  border-bottom: 1px solid var(--color-success);
+  color: var(--color-success);
+  padding: 0.85rem 1.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.errorMsg {
+  background: var(--color-danger-bg);
+  border-bottom: 1px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 0.85rem 1.75rem;
+  font-size: 0.88rem;
+}
+
+/* ── Form ────────────────────────────────────────────────── */
+.form {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  position: relative;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.charCount {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  pointer-events: none;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+  padding-bottom: 1.5rem; /* espaço para o contador */
+}
+
+/* ── Info box ────────────────────────────────────────────── */
+.infoBox {
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.1rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.infoBox strong { color: var(--color-warning); }
+.infoBox ul {
+  margin: 0.35rem 0 0 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* ── Actions ─────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.25rem;
+}
+.cancelBtn {
+  background: var(--color-bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--color-border);
+  padding: 0.55rem 1.25rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+.cancelBtn:hover { background: var(--color-bg-hover); color: var(--text-primary); }
+.submitBtn {
+  background: var(--color-accent);
+  color: #fff;
+  padding: 0.55rem 1.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 160px;
+  justify-content: center;
+}
+.submitBtn:hover:not(:disabled) { background: var(--color-accent-hover); }
+
+/* Spinners */
+.spinner, .spinnerSm {
+  border-radius: 50%;
+  border-top-color: var(--color-accent);
+  animation: spin 0.7s linear infinite;
+}
+.spinner   { width: 20px; height: 20px; border: 2px solid var(--color-border); }
+.spinnerSm { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; }
+
+/* Responsive */
+@media (max-width: 560px) {
+  .row { grid-template-columns: 1fr; }
+  .form { padding: 1.25rem; }
+  .header { padding: 1.25rem; }
+}

@@ -1,0 +1,102 @@
+/* ContentCard.module.css */
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  animation: fadeIn 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background: var(--color-bg-hover);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+.typeIcon { font-size: 1.1rem; flex-shrink: 0; }
+
+.meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.subject {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.typeBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.typeBadge.aula    { background: rgba(88,101,242,0.2);  color: #7289da; }
+.typeBadge.revisão { background: rgba(87,242,135,0.15); color: #57F287; }
+.typeBadge.prova   { background: rgba(237,66,69,0.15);  color: #ED4245; }
+
+.actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.card:hover .actions { opacity: 1; }
+
+.editBtn, .deleteBtn {
+  background: none;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  transition: background var(--transition);
+}
+.editBtn:hover   { background: var(--color-accent-light); }
+.deleteBtn:hover { background: var(--color-danger-bg); }
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.dateTime {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.channel {
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  background: var(--color-accent-light);
+  padding: 1px 7px;
+  border-radius: 4px;
+}
+
+.sentBadge {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--color-success);
+  font-weight: 500;
+}

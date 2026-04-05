@@ -1,0 +1,106 @@
+/* Layout.module.css v2 */
+
+.root { display: flex; min-height: 100vh; position: relative; }
+
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: transform var(--transition-slow);
+}
+
+.logo { display: flex; align-items: center; gap: 0.65rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--color-border); font-size: 1.5rem; }
+.logoText { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); }
+
+.nav { flex: 1; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; overflow-y: auto; }
+
+.navItem {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem; font-weight: 500;
+  transition: background var(--transition), color var(--transition);
+  text-decoration: none;
+  position: relative;
+}
+.navItem:hover { background: var(--color-bg-hover); color: var(--text-primary); text-decoration: none; }
+.navItem.active { background: var(--color-accent-light); color: var(--color-accent); }
+.navIcon { font-size: 1.1rem; width: 1.4rem; text-align: center; }
+.navLabel { flex: 1; }
+.navBadge {
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* User box */
+.userBox {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.userInfo { display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 0; }
+.userIcon { font-size: 1.2rem; flex-shrink: 0; }
+.userName { display: block; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.userRole { display: block; font-size: 0.72rem; color: var(--text-secondary); }
+.logoutBtn {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  color: var(--text-secondary);
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.logoutBtn:hover { background: var(--color-danger-bg); color: var(--color-danger); border-color: var(--color-danger); }
+
+.sidebarFooter { padding: 0.75rem 1.25rem; border-top: 1px solid var(--color-border); }
+.footerText { font-size: 0.78rem; color: var(--color-success); }
+
+.main { flex: 1; margin-left: var(--sidebar-width); display: flex; flex-direction: column; min-height: 100vh; }
+
+.header {
+  height: var(--header-height);
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  display: flex; align-items: center;
+  padding: 0 1.5rem; gap: 1rem;
+  position: sticky; top: 0; z-index: 50;
+}
+.menuBtn { display: none; background: none; color: var(--text-secondary); font-size: 1.2rem; padding: 0.3rem 0.5rem; border-radius: var(--radius-sm); }
+.menuBtn:hover { background: var(--color-bg-hover); color: var(--text-primary); }
+.pageTitle { font-size: 1rem; font-weight: 600; color: var(--text-primary); flex: 1; }
+.headerRight { display: flex; align-items: center; gap: 1rem; }
+.statusBadge { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--text-secondary); background: var(--color-bg-tertiary); padding: 0.3rem 0.75rem; border-radius: 99px; border: 1px solid var(--color-border); }
+.statusDot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-success); animation: pulse 2s ease infinite; }
+
+.content { flex: 1; padding: 1.75rem 2rem; animation: fadeIn 0.25s ease; }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 90; }
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .menuBtn { display: block; }
+  .overlay { display: block; }
+  .content { padding: 1.25rem 1rem; }
+}

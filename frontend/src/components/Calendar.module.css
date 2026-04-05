@@ -1,0 +1,123 @@
+/* Calendar.module.css */
+
+.calendar {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Cabeçalho dias da semana */
+.weekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+}
+.weekDay {
+  padding: 0.6rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+/* Célula de dia */
+.cell {
+  min-height: 100px;
+  padding: 0.5rem;
+  border-right: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: background var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.cell:hover { background: var(--color-bg-hover); }
+.cell:nth-child(7n) { border-right: none; }
+
+/* Dia de outro mês */
+.otherMonth .dayNumber { color: var(--text-muted); }
+.otherMonth { opacity: 0.5; }
+
+/* Hoje */
+.today .dayNumber {
+  background: var(--color-accent);
+  color: #fff;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Número do dia */
+.dayNumber {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Lista de eventos */
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+/* Item de evento */
+.event {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 0;
+}
+.eventTime {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.eventTitle {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "+N mais" */
+.overflow {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  padding: 1px 4px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cell { min-height: 64px; padding: 0.3rem; }
+  .eventTime { display: none; }
+  .weekDay { font-size: 0.68rem; }
+}
