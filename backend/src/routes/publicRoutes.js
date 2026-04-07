@@ -41,3 +41,11 @@ router.get("/exams", async (req, res) => {
 });
 
 module.exports = router;
+
+router.get("/attendance", async (req, res) => {
+  try {
+    const Attendance = require("../models/Attendance");
+    const list = await Attendance.find({ active: true });
+    res.json({ success: true, data: list });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
