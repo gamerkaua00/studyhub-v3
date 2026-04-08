@@ -1,11 +1,10 @@
-// StudyHub v3 — controllers/contentController.js — CORRIGIDO
-const Content  = require("../models/Content");
-const Subject  = require("../models/Subject");
-const { sendMonthlyAgenda, sendDiscordNotification } = require("../services/discordNotifier");
+// StudyHub v3 — contentController.js — CORRIGIDO
+const Content = require("../models/Content");
+const Subject = require("../models/Subject");
+const { sendDiscordNotification, sendMonthlyAgenda } = require("../services/discordNotifier");
 
 const getBRT = () => new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
 
-// Mapeia tipo para canal padrão no Discord
 const TYPE_CHANNEL_MAP = {
   "Aula":         "conteudos",
   "Revisão":      "conteudos",
@@ -17,48 +16,47 @@ const TYPE_CHANNEL_MAP = {
 };
 
 const TYPE_EMOJI = {
-  "Aula":         "📖",
-  "Revisão":      "🔄",
-  "Prova":        "📝",
-  "Apresentação": "🎤",
-  "Atividade":    "📋",
-  "Avaliação":    "📊",
-  "Lista":        "📃",
+  "Aula":"📖","Revisão":"🔄","Prova":"📝",
+  "Apresentação":"🎤","Atividade":"📋","Avaliação":"📊","Lista":"📃",
 };
 
-// Envia notificação imediata do conteúdo criado/editado
-const notifyContentCreated = async (content, isEdit = false) => {
+// Notifica criação/edição imediata + reenvia agenda do mês
+const notifyAndRefreshAgenda = async (content, isEdit = false) => {
   try {
-    const channel = content.discordChannel || TYPE_CHANNEL_MAP[content.type] || "conteudos";
-    const emoji   = TYPE_EMOJI[content.type] || "📚";
+    const channel   = content.discordChannel || TYPE_CHANNEL_MAP[content.type] || "conteudos";
+    const emoji     = TYPE_EMOJI[content.type] || "📚";
     const [y, m, d] = content.date.split("-");
 
+    // 1. Notificação imediata no canal do tipo
     const embed = {
-      title: `${emoji} ${isEdit ? "✏️ Atualizado:" : "📌 Novo:"} ${content.title}`,
+      title: `${emoji} ${isEdit ? "✏️ Atualizado:" : "📌 Cadastrado:"} ${content.title}`,
       color: parseInt((content.subjectColor || "#5865F2").replace("#", ""), 16),
       fields: [
-        { name: "📌 Matéria", value: content.subject,      inline: true },
-        { name: "🏷️ Tipo",    value: content.type,         inline: true },
-        { name: "📅 Data",    value: `${d}/${m}/${y}`,     inline: true },
-        { name: "🕐 Horário", value: content.time,         inline: true },
+        { name: "📌 Matéria", value: content.subject,  inline: true },
+        { name: "🏷️ Tipo",    value: content.type,     inline: true },
+        { name: "📅 Data",    value: `${d}/${m}/${y}`, inline: true },
+        { name: "🕐 Horário", value: content.time,     inline: true },
       ],
       timestamp: new Date().toISOString(),
-      footer: { text: "StudyHub • Conteúdo cadastrado no sistema" },
+      footer: { text: "StudyHub • Conteúdo cadastrado" },
     };
     if (content.description) embed.description = content.description;
     if (content.resourceLink) embed.fields.push({ name: "🔗 Material", value: `[Acessar](${content.resourceLink})`, inline: false });
 
-    await sendDiscordNotification(channel, "", embed);
+    const r1 = await sendDiscordNotification(channel, "", embed);
+    console.log(`[Content] Notif canal #${channel}: ${r1 ? "✅" : "❌ canal não encontrado"}`);
 
-    // Também reenvia a agenda completa do mês no #agenda
-    const month    = parseInt(m);
-    const year     = parseInt(y);
+    // 2. Reenvia agenda completa do mês no #agenda
+    const monthNum = parseInt(m);
+    const yearNum  = parseInt(y);
+    const monthStr = String(monthNum).padStart(2, "0");
     const contents = await Content.find({
-      date: { $gte: `${year}-${String(month).padStart(2,"0")}-01`, $lte: `${year}-${String(month).padStart(2,"0")}-31` }
+      date: { $gte: `${yearNum}-${monthStr}-01`, $lte: `${yearNum}-${monthStr}-31` }
     }).sort({ date: 1, time: 1 });
 
     if (contents.length > 0) {
-      await sendMonthlyAgenda(contents, month, year);
+      const r2 = await sendMonthlyAgenda(contents, monthNum, yearNum);
+      console.log(`[Content] Agenda reenviada (${contents.length} itens): ${r2 !== null ? "✅" : "❌"}`);
     }
   } catch (err) {
     console.error("[Content] Erro ao notificar Discord:", err.message);
@@ -100,7 +98,7 @@ const getUpcomingContents = async (req, res) => {
 const getFutureExams = async (req, res) => {
   try {
     const today = getBRT().toISOString().split("T")[0];
-    const exams = await Content.find({ type: { $in: ["Prova", "Avaliação"] }, date: { $gte: today } }).sort({ date: 1 });
+    const exams = await Content.find({ type: { $in: ["Prova","Avaliação"] }, date: { $gte: today } }).sort({ date: 1 });
     res.json({ success: true, data: exams });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
@@ -117,18 +115,16 @@ const createContent = async (req, res) => {
   try {
     const { title, subject, type, date, time, discordChannel, resourceLink, description } = req.body;
     let subjectColor = "#5865F2";
-    const existingSubject = await Subject.findOne({ name: subject });
-    if (existingSubject) subjectColor = existingSubject.color;
+    const s = await Subject.findOne({ name: subject });
+    if (s) subjectColor = s.color;
 
-    // Se não especificou canal, usa o padrão pelo tipo
     const channel = discordChannel || TYPE_CHANNEL_MAP[type] || "conteudos";
-
     const content = new Content({ title, subject, subjectColor, type, date, time,
       discordChannel: channel, resourceLink: resourceLink || "", description: description || "" });
     await content.save();
 
-    // Notifica Discord imediatamente
-    await notifyContentCreated(content, false);
+    // Notifica Discord (não bloqueia a resposta)
+    notifyAndRefreshAgenda(content, false).catch(console.error);
 
     res.status(201).json({ success: true, data: content, message: "Conteúdo criado!" });
   } catch (err) {
@@ -152,7 +148,7 @@ const updateContent = async (req, res) => {
     const content = await Content.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true, runValidators: true });
     if (!content) return res.status(404).json({ success: false, message: "Não encontrado" });
 
-    await notifyContentCreated(content, true);
+    notifyAndRefreshAgenda(content, true).catch(console.error);
 
     res.json({ success: true, data: content, message: "Atualizado!" });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
@@ -163,7 +159,6 @@ const deleteContent = async (req, res) => {
     const content = await Content.findByIdAndDelete(req.params.id);
     if (!content) return res.status(404).json({ success: false, message: "Não encontrado" });
 
-    // Atualiza agenda após deletar
     const [y, m] = content.date.split("-").map(Number);
     const remaining = await Content.find({
       date: { $gte: `${y}-${String(m).padStart(2,"0")}-01`, $lte: `${y}-${String(m).padStart(2,"0")}-31` }
