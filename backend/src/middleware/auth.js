@@ -1,56 +1,48 @@
-// ============================================================
-// StudyHub v2 — middleware/auth.js
-// Proteção de rotas com sessão simples
-// ============================================================
+// StudyHub v3 — middleware/auth.js — CORRIGIDO com sessões no MongoDB
+const Session = require("../models/Session");
 
-const ADMIN_USER = "mazur"; // aceita maiúsculo e minúsculo
+const ADMIN_USER = "mazur";
 const ADMIN_PASS = "020683";
 
-// Sessões ativas em memória (id → { user, createdAt })
-const sessions = new Map();
+const generateToken = () =>
+  Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
 
-// Gera um token aleatório simples
-const generateToken = () => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
-
-// Cria uma sessão e retorna o token
-const createSession = (user) => {
+const createSession = async (username, role = "estudante") => {
   const token = generateToken();
-  sessions.set(token, { user, createdAt: Date.now() });
+  await Session.create({ token, username, role });
   return token;
 };
 
-// Verifica se o token é válido (expira em 24h)
-const verifySession = (token) => {
+const verifySession = async (token) => {
   if (!token) return null;
-  const session = sessions.get(token);
-  if (!session) return null;
-  const expired = Date.now() - session.createdAt > 24 * 60 * 60 * 1000;
-  if (expired) { sessions.delete(token); return null; }
-  return session;
+  try {
+    const session = await Session.findOne({ token });
+    return session ? { user: session.username, role: session.role } : null;
+  } catch { return null; }
 };
 
-// Middleware que protege rotas
-const requireAuth = (req, res, next) => {
+const destroySession = async (token) => {
+  if (token) await Session.deleteOne({ token }).catch(() => {});
+};
+
+const requireAuth = async (req, res, next) => {
   const token = req.headers["authorization"]?.replace("Bearer ", "");
-  const session = verifySession(token);
-  if (!session) {
-    return res.status(401).json({ success: false, message: "Não autorizado. Faça login." });
-  }
+  const session = await verifySession(token);
+  if (!session) return res.status(401).json({ success: false, message: "Não autorizado. Faça login." });
   req.user = session.user;
+  req.role = session.role;
   next();
 };
 
-// Verifica se é admin principal (Mazur)
-const requireAdmin = (req, res, next) => {
+const requireAdmin = async (req, res, next) => {
   const token = req.headers["authorization"]?.replace("Bearer ", "");
-  const session = verifySession(token);
+  const session = await verifySession(token);
   if (!session || session.user.toLowerCase() !== ADMIN_USER) {
     return res.status(403).json({ success: false, message: "Acesso restrito ao administrador." });
   }
   req.user = session.user;
+  req.role = "admin";
   next();
 };
 
-module.exports = { createSession, verifySession, requireAuth, requireAdmin, ADMIN_USER, ADMIN_PASS };
+module.exports = { createSession, verifySession, destroySession, requireAuth, requireAdmin, ADMIN_USER, ADMIN_PASS };
