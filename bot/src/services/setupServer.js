@@ -1,52 +1,61 @@
-// StudyHub v3 — services/setupServer.js
+// StudyHub v3 — setupServer.js — SEM DELETAR CANAIS
 const { ChannelType, PermissionsBitField } = require("discord.js");
+const { logInfo } = require("./logService");
 
-const STATIC_STRUCTURE = [
+// Apenas cria o que não existe — não deleta nada
+const FIXED_STRUCTURE = [
   {
     category: "📋 Informações",
     channels: [
-      { name: "regras",          adminOnly: true,  readOnly: true  },
-      { name: "bem-vindo",       adminOnly: true,  readOnly: true  },
-      { name: "anuncios",        adminOnly: true,  readOnly: true  },
-    ],
-  },
-  {
-    category: "📚 Estudos",
-    channels: [
-      { name: "conteudos",       adminOnly: false, readOnly: true  },
-      { name: "materiais",       adminOnly: false, readOnly: false },
-      { name: "duvidas",         adminOnly: false, readOnly: false },
-    ],
-  },
-  {
-    category: "📁 Trabalhos",
-    channels: [
-      { name: "apresentacoes",   adminOnly: false, readOnly: false },
-      { name: "atividades",      adminOnly: false, readOnly: false },
-      { name: "avaliacoes",      adminOnly: true,  readOnly: true  },
-      { name: "listas",          adminOnly: true,  readOnly: true  },
+      { name: "regras",           perm: "readOnly"  },
+      { name: "bem-vindo",        perm: "readOnly"  },
+      { name: "anuncios",         perm: "readOnly"  },
     ],
   },
   {
     category: "📅 Agenda",
     channels: [
-      { name: "agenda",          adminOnly: true,  readOnly: true  },
-      { name: "avisos-provas",   adminOnly: true,  readOnly: true  },
+      { name: "agenda",           perm: "readOnly"  },
+      { name: "avisos-provas",    perm: "readOnly"  }, // todos veem, só bot/admin envia
+    ],
+  },
+  {
+    category: "📁 Trabalhos",
+    channels: [
+      { name: "apresentacoes",    perm: "open"      },
+      { name: "atividades",       perm: "open"      },
+      { name: "avaliacoes",       perm: "readOnly"  },
+      { name: "listas",           perm: "readOnly"  },
+    ],
+  },
+  {
+    category: "📚 Estudos",
+    channels: [
+      { name: "conteudos",        perm: "readOnly"  },
+      { name: "materiais",        perm: "open"      },
+      { name: "duvidas",          perm: "open"      },
+    ],
+  },
+  {
+    category: "🎓 TCC",
+    channels: [
+      { name: "tcc",              perm: "tccOnly"   },
     ],
   },
   {
     category: "🤖 Bot",
     channels: [
-      { name: "central-comandos",adminOnly: true,  readOnly: true  },
-      { name: "use-aqui",        adminOnly: false, readOnly: false },
-      { name: "admin-bot",       adminOnly: true,  readOnly: false },
-      { name: "log-bot",         adminOnly: true,  readOnly: true  },
+      { name: "central-comandos", perm: "readOnly"  },
+      { name: "use-aqui",         perm: "open"      },
+      { name: "admin-bot",        perm: "adminOnly" },
+      { name: "admin-cmds",       perm: "adminOnly" }, // canal privado de comandos admin
+      { name: "log-bot",          perm: "adminOnly" },
     ],
   },
 ];
 
 const VOICE_CATEGORY = "🔊 Salas de Estudo";
-const VOICE_CHANNELS  = [
+const VOICE_CHANNELS = [
   "📖 Sala de Estudo 1",
   "📖 Sala de Estudo 2",
   "📖 Sala de Estudo 3",
@@ -56,220 +65,237 @@ const VOICE_CHANNELS  = [
 const ROLES = [
   { name: "Admin",     color: "#ED4245", hoist: true  },
   { name: "Estudante", color: "#5865F2", hoist: true  },
-  { name: "Amigo",     color: "#57F287", hoist: false },
+  { name: "Amigo",     color: "#57F287", hoist: true  },
+  { name: "TCC",       color: "#9B59B6", hoist: false },
 ];
+
+const buildPerms = (perm, everyoneId, adminRole, tccRole) => {
+  const SEND = PermissionsBitField.Flags.SendMessages;
+  const VIEW = PermissionsBitField.Flags.ViewChannel;
+  if (perm === "open")      return [];
+  if (perm === "readOnly")  {
+    // Todos VEEM, só admin envia
+    const ow = [
+      { id: everyoneId, deny: [SEND], allow: [VIEW] },
+    ];
+    if (adminRole) ow.push({ id: adminRole.id, allow: [SEND, VIEW] });
+    return ow;
+  }
+  if (perm === "adminOnly") {
+    const ow = [{ id: everyoneId, deny: [VIEW, SEND] }];
+    if (adminRole) ow.push({ id: adminRole.id, allow: [VIEW, SEND] });
+    return ow;
+  }
+  if (perm === "tccOnly") {
+    const ow = [{ id: everyoneId, deny: [VIEW, SEND] }];
+    if (adminRole) ow.push({ id: adminRole.id, allow: [VIEW, SEND] });
+    if (tccRole)   ow.push({ id: tccRole.id,   allow: [VIEW, SEND] });
+    return ow;
+  }
+  return [];
+};
 
 const setupServer = async (guild, client) => {
   try {
     console.log(`[Setup] Configurando "${guild.name}"...`);
-    const existingChannels = await guild.channels.fetch();
-    const existingRoles    = await guild.roles.fetch();
-    const everyoneId       = guild.roles.everyone.id;
+    let existingChannels = await guild.channels.fetch();
+    const existingRoles  = await guild.roles.fetch();
 
     // 1. Cargos
     for (const roleDef of ROLES) {
       const exists = existingRoles.find((r) => r.name === roleDef.name);
       if (!exists) {
         await guild.roles.create({ name: roleDef.name, color: roleDef.color, hoist: roleDef.hoist, mentionable: true });
-        console.log(`[Setup] Cargo criado: ${roleDef.name}`);
+        console.log(`[Setup] ✅ Cargo: ${roleDef.name}`);
       }
     }
 
-    const freshRoles = await guild.roles.fetch();
-    const adminRole  = freshRoles.find((r) => r.name === "Admin");
+    const roles      = await guild.roles.fetch();
+    const adminRole  = roles.find((r) => r.name === "Admin");
+    const tccRole    = roles.find((r) => r.name === "TCC");
+    const everyoneId = guild.roles.everyone.id;
 
-    // 2. Canais estáticos
-    for (const { category: catName, channels } of STATIC_STRUCTURE) {
-      let cat = existingChannels.find((c) => c.type === ChannelType.GuildCategory && c.name === catName);
-      if (!cat) {
-        cat = await guild.channels.create({ name: catName, type: ChannelType.GuildCategory });
-        console.log(`[Setup] Categoria: ${catName}`);
+    // 2. Categorias e canais (só cria se não existir)
+    for (const { category: catName, channels } of FIXED_STRUCTURE) {
+      existingChannels = await guild.channels.fetch();
+      let category = existingChannels.find((c) => c.type === ChannelType.GuildCategory && c.name === catName);
+      if (!category) {
+        category = await guild.channels.create({ name: catName, type: ChannelType.GuildCategory });
+        console.log(`[Setup] ✅ Categoria: ${catName}`);
       }
 
       for (const ch of channels) {
-        const exists = existingChannels.find((c) => c.type === ChannelType.GuildText && c.name === ch.name && c.parentId === cat.id);
-        if (!exists) {
-          const perms = buildPerms(ch, everyoneId, adminRole);
-          await guild.channels.create({ name: ch.name, type: ChannelType.GuildText, parent: cat.id, permissionOverwrites: perms });
-          console.log(`[Setup]  Canal: #${ch.name}`);
+        existingChannels = await guild.channels.fetch();
+        const existing = existingChannels.find((c) =>
+          c.type === ChannelType.GuildText && c.name === ch.name
+        );
+        const perms = buildPerms(ch.perm, everyoneId, adminRole, tccRole);
+        if (!existing) {
+          await guild.channels.create({ name: ch.name, type: ChannelType.GuildText, parent: category.id, permissionOverwrites: perms });
+          console.log(`[Setup]   ✅ Canal criado: #${ch.name} (${ch.perm})`);
+        } else {
+          // Atualiza permissões do canal existente
+          try {
+            await existing.permissionOverwrites.set(perms);
+            console.log(`[Setup]   🔄 Permissões atualizadas: #${ch.name} (${ch.perm})`);
+          } catch (e) { console.warn(`[Setup]   ⚠️ Não foi possível atualizar #${ch.name}: ${e.message}`); }
         }
       }
     }
 
     // 3. Salas de voz
+    existingChannels = await guild.channels.fetch();
     let voiceCat = existingChannels.find((c) => c.type === ChannelType.GuildCategory && c.name === VOICE_CATEGORY);
-    if (!voiceCat) {
-      voiceCat = await guild.channels.create({ name: VOICE_CATEGORY, type: ChannelType.GuildCategory });
-    }
+    if (!voiceCat) voiceCat = await guild.channels.create({ name: VOICE_CATEGORY, type: ChannelType.GuildCategory });
+
     for (const vcName of VOICE_CHANNELS) {
+      existingChannels = await guild.channels.fetch();
       const exists = existingChannels.find((c) => c.type === ChannelType.GuildVoice && c.name === vcName);
       if (!exists) {
         await guild.channels.create({ name: vcName, type: ChannelType.GuildVoice, parent: voiceCat.id, userLimit: 10 });
-        console.log(`[Setup]  Voz: ${vcName}`);
+        console.log(`[Setup]   ✅ Sala voz: ${vcName}`);
       }
     }
 
-    // 4. Mensagens fixas
-    await sendWelcomeMessages(guild, existingChannels);
-    console.log(`[Setup] Configuração concluída!\n`);
+    // 4. Canais de atendimento do backend
+    await ensureAttendanceChannels(guild, adminRole, everyoneId);
+
+    // 5. Mensagens fixas nos canais
+    existingChannels = await guild.channels.fetch();
+    await sendFixedMessages(guild, existingChannels);
+
+    console.log(`[Setup] 🎉 "${guild.name}" pronto!\n`);
+    if (client) await logInfo(client, `✅ Servidor "${guild.name}" configurado.`);
   } catch (err) {
-    console.error(`[Setup] Erro:`, err.message);
+    console.error(`[Setup] ❌ Erro:`, err.message);
   }
 };
 
-// Monta permissões de canal
-const buildPerms = (ch, everyoneId, adminRole) => {
-  const perms = [];
-  if (ch.adminOnly) {
-    perms.push({ id: everyoneId, deny: [PermissionsBitField.Flags.ViewChannel] });
-    if (adminRole) perms.push({ id: adminRole.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] });
-  } else if (ch.readOnly) {
-    perms.push({ id: everyoneId, deny: [PermissionsBitField.Flags.SendMessages] });
-    if (adminRole) perms.push({ id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] });
-  }
-  return perms;
-};
-
-// Cria canal de atendimento dinamicamente
-const createAttendanceChannel = async (guild, channelName) => {
+const ensureAttendanceChannels = async (guild, adminRole, everyoneId) => {
   try {
+    const https = require("https");
+    const http  = require("http");
+    const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
+
+    const attendances = await new Promise((resolve) => {
+      const url = new URL(BACKEND_URL + "/api/public/attendance");
+      const lib = url.protocol === "https:" ? https : http;
+      const req = lib.get(url.href, (res) => {
+        let data = "";
+        res.on("data", (c) => (data += c));
+        res.on("end", () => { try { resolve(JSON.parse(data).data || []); } catch { resolve([]); } });
+      });
+      req.on("error", () => resolve([]));
+      req.setTimeout(6000, () => { req.destroy(); resolve([]); });
+    });
+
+    if (!attendances.length) return;
+
     const channels = await guild.channels.fetch();
-    const catName  = "🏫 Atendimento";
-    let cat = channels.find((c) => c.type === ChannelType.GuildCategory && c.name === catName);
-    if (!cat) {
-      cat = await guild.channels.create({ name: catName, type: ChannelType.GuildCategory });
+    let atendCat = channels.find((c) => c.type === ChannelType.GuildCategory && c.name === "🏫 Atendimento");
+    if (!atendCat) {
+      atendCat = await guild.channels.create({ name: "🏫 Atendimento", type: ChannelType.GuildCategory });
+      console.log("[Setup] ✅ Categoria: 🏫 Atendimento");
     }
-    const exists = channels.find((c) => c.type === ChannelType.GuildText && c.name === channelName && c.parentId === cat.id);
-    if (!exists) {
-      const freshRoles = await guild.roles.fetch();
-      const adminRole  = freshRoles.find((r) => r.name === "Admin");
-      const everyoneId = guild.roles.everyone.id;
-      // Canal de atendimento: todos veem, ninguém envia (só bot/admin)
-      const perms = [
-        { id: everyoneId, deny: [PermissionsBitField.Flags.SendMessages] },
-      ];
-      if (adminRole) perms.push({ id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages] });
-      await guild.channels.create({ name: channelName, type: ChannelType.GuildText, parent: cat.id, permissionOverwrites: perms });
-      console.log(`[Setup] Canal de atendimento criado: #${channelName}`);
+
+    for (const att of attendances) {
+      const chName = att.discordChannel;
+      if (!chName) continue;
+      const refreshed = await guild.channels.fetch();
+      const exists = refreshed.find((c) => c.name.toLowerCase() === chName.toLowerCase() && c.type === ChannelType.GuildText);
+      if (!exists) {
+        const newCh = await guild.channels.create({
+          name: chName,
+          type: ChannelType.GuildText,
+          parent: atendCat.id,
+          permissionOverwrites: [
+            { id: everyoneId, deny: [PermissionsBitField.Flags.SendMessages] },
+            ...(adminRole ? [{ id: adminRole.id, allow: [PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ViewChannel] }] : []),
+          ],
+        });
+        const days = att.days?.join(", ") || "A definir";
+        await newCh.send({ embeds: [{
+          title: `📋 Atendimento — ${att.subject}`,
+          color: 0x1ABC9C,
+          fields: [
+            { name: "👨‍🏫 Professor", value: att.teacher,                        inline: true  },
+            { name: "🏫 Sala",       value: att.room || "A definir",             inline: true  },
+            { name: "📅 Dias",       value: days,                                inline: false },
+            { name: "🕐 Horário",    value: `${att.startTime} — ${att.endTime}`, inline: true  },
+            ...(att.notes ? [{ name: "📝 Obs", value: att.notes, inline: false }] : []),
+          ],
+          timestamp: new Date().toISOString(),
+          footer: { text: "StudyHub • Painel de Atendimento" },
+        }] });
+        console.log(`[Setup]   ✅ Atendimento: #${chName}`);
+      }
     }
   } catch (err) {
-    console.error("[Setup] Erro ao criar canal de atendimento:", err.message);
+    console.error("[Setup] Erro atendimento:", err.message);
   }
 };
 
-const sendWelcomeMessages = async (guild, existingChannels) => {
-  const freshChannels   = await guild.channels.fetch();
-  const regrasChannel   = freshChannels.find((c) => c.name === "regras"           && c.type === ChannelType.GuildText);
-  const bemVindoChannel = freshChannels.find((c) => c.name === "bem-vindo"        && c.type === ChannelType.GuildText);
-  const centralChannel  = freshChannels.find((c) => c.name === "central-comandos" && c.type === ChannelType.GuildText);
-  const useAquiChannel  = freshChannels.find((c) => c.name === "use-aqui"         && c.type === ChannelType.GuildText);
+const sendFixedMessages = async (guild, channels) => {
+  const find = (name) => channels.find((c) => c.name === name && c.type === ChannelType.GuildText);
+  const regras  = find("regras");
+  const bemVindo = find("bem-vindo");
+  const central = find("central-comandos");
+  const useAqui = find("use-aqui");
 
-  // Regras
-  if (regrasChannel) {
-    const msgs = await regrasChannel.messages.fetch({ limit: 1 });
+  if (regras) {
+    const msgs = await regras.messages.fetch({ limit: 1 });
     if (msgs.size === 0) {
-      await regrasChannel.send({
-        embeds: [{
-          title: "📋 Regras do Servidor",
-          description: "Leia com atenção. O descumprimento resulta em advertência, silenciamento ou banimento.",
-          color: 0x5865F2,
-          fields: [
-            { name: "1️⃣ Respeito", value: "Trate todos com educação. Não são tolerados xingamentos, ofensas, discriminação de qualquer tipo ou discussões agressivas.", inline: false },
-            { name: "2️⃣ Canais corretos", value: `• Comandos do bot em **#use-aqui**\n• Dúvidas de matéria em **#duvidas**\n• Trabalhos e atividades em **#atividades**\n• Não envie conteúdo fora do contexto`, inline: false },
-            { name: "3️⃣ Sem spam", value: "Não repita mensagens, não envie correntes, links suspeitos ou propagandas. Evite letras maiúsculas excessivas.", inline: false },
-            { name: "4️⃣ Conteúdo adequado", value: "Proibido conteúdo adulto, violento ou ilegal. Avatares e nomes de usuário devem ser apropriados.", inline: false },
-            { name: "5️⃣ Salas de voz", value: "Respeite quem está estudando. Evite sons irritantes ou interferências. Não entre em salas sem permissão.", inline: false },
-            { name: "6️⃣ Administração", value: "Siga as orientações dos admins. Em caso de problemas, contate um **@Admin**. Não tente burlar as regras.", inline: false },
-          ],
-          footer: { text: "StudyHub • Ao participar, você concorda com estas regras." },
-          timestamp: new Date().toISOString(),
-        }],
-      });
+      await regras.send({ embeds: [{ title: "📋 Regras — StudyHub IFPR",
+        description: "Leia com atenção. O descumprimento pode resultar em **advertência, silenciamento ou banimento**.", color: 0x5865F2,
+        fields: [
+          { name: "1️⃣ Respeito",         value: "Trate todos com educação. Sem xingamentos, ofensas ou discriminação.", inline: false },
+          { name: "2️⃣ Canais corretos",   value: "• Comandos em **#use-aqui**\n• Dúvidas em **#duvidas**\n• TCC em **#tcc** (cargo necessário)", inline: false },
+          { name: "3️⃣ Sem spam",          value: "Sem mensagens repetidas, flood ou links suspeitos.", inline: false },
+          { name: "4️⃣ Conteúdo adequado", value: "Proibido conteúdo adulto, violento ou ilegal.", inline: false },
+          { name: "5️⃣ Salas de voz",      value: "Respeite quem está estudando.", inline: false },
+          { name: "6️⃣ Administração",     value: "Siga os admins. Dúvidas? **@Admin**.", inline: false },
+        ],
+        footer: { text: "StudyHub IFPR • Ao participar você concorda com estas regras." },
+        timestamp: new Date().toISOString() }] });
     }
   }
 
-  // Bem-vindo
-  if (bemVindoChannel) {
-    const msgs = await bemVindoChannel.messages.fetch({ limit: 1 });
+  if (bemVindo) {
+    const msgs = await bemVindo.messages.fetch({ limit: 1 });
     if (msgs.size === 0) {
-      await bemVindoChannel.send({
-        embeds: [{
-          title: "🎓 Bem-vindo(a) ao StudyHub!",
-          description:
-            "Plataforma integrada de gerenciamento de estudos.\n\n" +
-            "📅 **Agenda automática** — provas e aulas no horário certo\n" +
-            "🔔 **Notificações automáticas** no Discord\n" +
-            "📷 **Galeria de aulas** organizada por matéria\n" +
-            "🏫 **Atendimento** — horários e salas dos professores\n" +
-            "💬 **Tire dúvidas** com os colegas\n\n" +
-            "Ao entrar você recebeu automaticamente o cargo **@Estudante**.",
-          color: 0x57F287,
-          fields: [
-            {
-              name: "📌 Primeiros passos",
-              value:
-                `1. Leia as **#regras**\n` +
-                `2. Use os comandos do bot em **#use-aqui**\n` +
-                `3. Veja a agenda em **#agenda**`,
-              inline: false,
-            },
-          ],
-          footer: { text: "StudyHub • Bons estudos! 📚" },
-          timestamp: new Date().toISOString(),
-        }],
-      });
+      await bemVindo.send({ embeds: [{ title: "🎉 Bem-vindo(a) ao StudyHub IFPR!",
+        description: "Servidor oficial de estudos do grupo.\n\n📅 Agenda automática\n🔔 Notificações no horário certo\n💬 Espaço para dúvidas\n📖 Salas de estudo em grupo\n\n*Você recebe o cargo **Estudante** automaticamente ao entrar.*",
+        color: 0x57F287,
+        fields: [{ name: "📌 Primeiros passos", value: "1. Leia **#regras**\n2. Use comandos em **#use-aqui**\n3. Explore os canais!", inline: false }],
+        footer: { text: "StudyHub IFPR • Bons estudos! 📚" }, timestamp: new Date().toISOString() }] });
     }
   }
 
-  // Central de comandos (painel fixo — leitura apenas)
-  if (centralChannel) {
-    const msgs = await centralChannel.messages.fetch({ limit: 1 });
+  if (central) {
+    const msgs = await central.messages.fetch({ limit: 1 });
     if (msgs.size === 0) {
-      await centralChannel.send({
-        embeds: [{
-          title: "🤖 StudyHub Bot — Central de Comandos",
-          description: `Use os comandos em **#use-aqui**. Aqui ficam apenas as referências.\n\n⚠️ Comandos usados fora do **#use-aqui** serão deletados automaticamente.`,
-          color: 0x5865F2,
-          fields: [
-            { name: "👥 Comandos para todos", value:
-              "`/hoje` → Conteúdos de hoje\n" +
-              "`/agenda` → Próximos conteúdos (use `/agenda quantidade:10` para mais)\n" +
-              "`/provas` → Provas futuras com contagem regressiva\n" +
-              "`/ajuda` → Lista todos os comandos\n" +
-              "`/status` → Status e uptime do bot\n\n" +
-              "_Também funcionam com `!hoje`, `!agenda`, `!provas`, `!ajuda`_",
-              inline: false,
-            },
-            { name: "🛡️ Comandos de Admin", value:
-              "`/clear [quantidade]` → Limpa mensagens do canal\n" +
-              "`/mute @usuario [minutos]` → Silencia um membro\n" +
-              "`/unmute @usuario` → Remove silenciamento\n" +
-              "`/cargo @usuario [cargo]` → Atribui cargo\n" +
-              "`/avisar [mensagem]` → Envia aviso no #anuncios",
-              inline: false,
-            },
-          ],
-          footer: { text: "StudyHub v3 • Comandos restritos ao #use-aqui" },
-          timestamp: new Date().toISOString(),
-        }],
-      });
+      await central.send({ embeds: [{ title: "🤖 Central de Comandos",
+        description: "Use os comandos em **#use-aqui**. Aqui fica só a referência.", color: 0x5865F2,
+        fields: [
+          { name: "📅 `/hoje` ou `!hoje`",    value: "Conteúdos agendados para hoje",      inline: false },
+          { name: "📆 `/agenda` ou `!agenda`", value: "Próximos conteúdos",                 inline: false },
+          { name: "📝 `/provas` ou `!provas`", value: "Provas com contagem regressiva",     inline: false },
+          { name: "📊 `/status`",              value: "Uptime e status do bot",             inline: false },
+          { name: "❓ `/ajuda` ou `!ajuda`",   value: "Lista completa de comandos",          inline: false },
+          { name: "🛡️ Admin: `/clear /mute /cargo`", value: "Moderação (requer @Admin)", inline: false },
+        ],
+        footer: { text: "StudyHub v3" }, timestamp: new Date().toISOString() }] });
     }
   }
 
-  // Mensagem de boas-vindas no #use-aqui
-  if (useAquiChannel) {
-    const msgs = await useAquiChannel.messages.fetch({ limit: 1 });
+  if (useAqui) {
+    const msgs = await useAqui.messages.fetch({ limit: 1 });
     if (msgs.size === 0) {
-      await useAquiChannel.send({
-        embeds: [{
-          title: "💬 Canal de Comandos",
-          description: "Use este canal para interagir com o bot!\nDigite `/` para ver todos os comandos disponíveis ou consulte **#central-comandos**.",
-          color: 0x57F287,
-          footer: { text: "StudyHub • Comandos com / ou !" },
-        }],
-      });
+      await useAqui.send({ embeds: [{ title: "💬 Use os comandos aqui!",
+        description: "Digite `/` para ver todos os comandos com autocompletar.\n\n`!hoje` `!agenda` `!provas` `!ajuda`\n`/hoje` `/agenda` `/provas` `/status` `/ajuda`\n\n⚠️ Comandos em outros canais serão deletados.",
+        color: 0x57F287, footer: { text: "StudyHub v3" } }] });
     }
   }
 };
 
-module.exports = { setupServer, createAttendanceChannel };
+module.exports = { setupServer, ensureAttendanceChannels };

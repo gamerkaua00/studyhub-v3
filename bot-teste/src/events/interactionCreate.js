@@ -1,8 +1,7 @@
 // StudyHub v3 — events/interactionCreate.js
 // Processa slash commands e botões de cargo
 const { assignRole } = require("./guildMemberAdd");
-const ALLOWED_CHANNEL  = "use-aqui";
-const ADMIN_CHANNEL   = "admin-cmds"; // admins podem usar comandos aqui também
+const ALLOWED_CHANNEL = "use-aqui";
 const ADMIN_SLASH     = ["clear", "mute", "cargo", "unmute"];
 
 module.exports = {
@@ -54,10 +53,8 @@ module.exports = {
       return interaction.reply({ content: "❌ Comando restrito a **@Admin**.", ephemeral: true });
     }
 
-    // Restringe ao #use-aqui ou #admin-cmds (para admins)
-    const inAllowedChannel = interaction.channel?.name === ALLOWED_CHANNEL || 
-                             (isAdmin && interaction.channel?.name === ADMIN_CHANNEL);
-    if (!isAdmin && !inAllowedChannel) {
+    // Restringe ao #use-aqui (exceto admins e ephemeral)
+    if (!isAdmin && interaction.channel?.name !== ALLOWED_CHANNEL) {
       const useAquiChannel = interaction.guild?.channels.cache.find((c) => c.name === ALLOWED_CHANNEL);
       return interaction.reply({
         content: `❌ Use comandos no canal ${useAquiChannel ? `<#${useAquiChannel.id}>` : "#use-aqui"}!`,

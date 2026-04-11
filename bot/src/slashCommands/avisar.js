@@ -1,29 +1,22 @@
+// StudyHub v3 — slashCommands/avisar.js (admin)
 const { SlashCommandBuilder, ChannelType } = require("discord.js");
-
 module.exports = {
-  adminOnly: true,
   data: new SlashCommandBuilder()
     .setName("avisar")
-    .setDescription("[Admin] Envia aviso no #anuncios")
-    .addStringOption((o) => o.setName("mensagem").setDescription("O aviso").setRequired(true)),
+    .setDescription("Envia aviso em um canal (Admin)")
+    .addStringOption((o) => o.setName("mensagem").setDescription("Texto do aviso").setRequired(true))
+    .addChannelOption((o) => o.setName("canal").setDescription("Canal destino (padrão: anuncios)").addChannelTypes(ChannelType.GuildText))
+    .addStringOption((o) => o.setName("titulo").setDescription("Título do aviso").setRequired(false)),
   async execute(interaction) {
     const mensagem = interaction.options.getString("mensagem");
-    await interaction.deferReply({ ephemeral: true });
+    const titulo   = interaction.options.getString("titulo") || "📢 Aviso";
+    const canal    = interaction.options.getChannel("canal") || interaction.guild.channels.cache.find((c) => c.name === "anuncios");
+    if (!canal) return interaction.reply({ content: "❌ Canal não encontrado.", ephemeral: true });
     try {
-      const channels = await interaction.guild.channels.fetch();
-      const anuncios = channels.find((c) => c.name === "anuncios" && c.type === ChannelType.GuildText);
-      if (!anuncios) return interaction.editReply("❌ Canal #anuncios não encontrado.");
-      await anuncios.send({
-        content: "@here",
-        embeds: [{
-          title: "📢 Aviso",
-          description: mensagem,
-          color: 0xEB459E,
-          footer: { text: `Enviado por ${interaction.user.username}` },
-          timestamp: new Date().toISOString(),
-        }],
-      });
-      await interaction.editReply("✅ Aviso enviado em #anuncios.");
-    } catch (err) { await interaction.editReply(`❌ ${err.message}`); }
+      await canal.send({ embeds: [{ title: titulo, description: mensagem, color: 0xFEE75C, timestamp: new Date().toISOString(), footer: { text: `Enviado por ${interaction.user.username}` } }] });
+      interaction.reply({ content: `✅ Aviso enviado em <#${canal.id}>`, ephemeral: true });
+    } catch (err) {
+      interaction.reply({ content: `❌ Erro: ${err.message}`, ephemeral: true });
+    }
   },
 };

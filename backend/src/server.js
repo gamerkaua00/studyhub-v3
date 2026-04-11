@@ -1,4 +1,4 @@
-// StudyHub v3 — server.js
+// StudyHub v3 — server.js — REVISADO
 require("dotenv").config();
 const express  = require("express");
 const cors     = require("cors");
@@ -14,9 +14,9 @@ const publicRoutes     = require("./routes/publicRoutes");
 const messageRoutes    = require("./routes/messageRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const galleryRoutes    = require("./routes/galleryRoutes");
+const holidayRoutes    = require("./routes/holidayRoutes");
+const eventRoutes      = require("./routes/eventRoutes");
 const { runScheduler } = require("./services/scheduler");
-const { requireAuth }  = require("./middleware/auth");
-const { sendErrorLog } = require("./services/discordNotifier");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -26,56 +26,58 @@ app.use(cors({
     process.env.FRONTEND_URL || "http://localhost:5173",
     "http://localhost:5173",
     "http://localhost:4173",
+    "https://gamerkaua00.github.io",
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
 }));
 
 app.use(express.json({ limit: "20mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
-// Rotas públicas
-app.use("/api/auth",   authRoutes);
-app.use("/api/public", publicRoutes);
+// ── Rotas públicas (sem auth) ────────────────────────────────
+app.use("/api/auth",    authRoutes);
+app.use("/api/public",  publicRoutes);
 
-// Rotas protegidas
-app.use("/api/contents",    requireAuth, contentRoutes);
-app.use("/api/subjects",    requireAuth, subjectRoutes);
-app.use("/api/messages",    requireAuth, messageRoutes);
-app.use("/api/attendance",  requireAuth, attendanceRoutes);
-app.use("/api/gallery",     requireAuth, galleryRoutes);
+// ── Rotas protegidas (auth dentro de cada router) ────────────
+app.use("/api/contents",    contentRoutes);
+app.use("/api/subjects",    subjectRoutes);
+app.use("/api/messages",    messageRoutes);
+app.use("/api/attendance",  attendanceRoutes);
+app.use("/api/gallery",     galleryRoutes);
+app.use("/api/holidays",    holidayRoutes);
+app.use("/api/events",      eventRoutes);
 
+// ── Health check ─────────────────────────────────────────────
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", version: "3.0.0", uptime: process.uptime(), timestamp: new Date().toISOString() });
+  res.json({ status: "ok", version: "3.0.0", uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() });
 });
 
-// Keep-alive: ping a cada 10 minutos para não dormir no Render
+// ── Keep-alive ───────────────────────────────────────────────
 const keepAlive = () => {
   const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
   const lib  = url.startsWith("https") ? https : http;
-  lib.get(`${url}/health`, (res) => {
-    console.log(`[Keep-alive] Ping OK ${res.statusCode}`);
-  }).on("error", async (err) => {
-    console.warn("[Keep-alive] Falhou:", err.message);
-    await sendErrorLog("Keep-alive falhou", err.message, true);
-  });
+  lib.get(`${url}/health`, () => {}).on("error", () => {});
 };
 
+// ── MongoDB + Start ─────────────────────────────────────────
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✅ MongoDB conectado");
     app.listen(PORT, () => console.log(`🚀 StudyHub API v3 na porta ${PORT}`));
 
-    cron.schedule("*/1 * * * *",  async () => { await runScheduler(); });
+    // Scheduler a cada minuto
+    cron.schedule("*/1 * * * *", runScheduler);
+    // Keep-alive a cada 10 min
     cron.schedule("*/10 * * * *", keepAlive);
-
-    // Heartbeat no #log-bot a cada hora
+    // Heartbeat horário
     cron.schedule("0 * * * *", async () => {
       const { sendDiscordNotification } = require("./services/discordNotifier");
-      const uptime = Math.floor(process.uptime() / 60);
+      const up = Math.floor(process.uptime() / 60);
       await sendDiscordNotification("log-bot", "", {
         title: "💚 Backend Online",
-        description: `Uptime: **${uptime} minutos**`,
+        description: `Uptime: **${up} minutos**`,
         color: 0x57F287,
         timestamp: new Date().toISOString(),
         footer: { text: "StudyHub v3 • Heartbeat" },
@@ -84,15 +86,13 @@ mongoose.connect(process.env.MONGODB_URI)
 
     console.log("⏰ Scheduler + keep-alive + heartbeat iniciados");
   })
-  .catch(async (err) => {
-    console.error("❌ Erro MongoDB:", err.message);
-    await sendErrorLog("Falha na conexão com MongoDB", err.message, true);
+  .catch((err) => {
+    console.error("❌ MongoDB erro:", err.message);
     process.exit(1);
   });
 
-process.on("unhandledRejection", async (reason) => {
-  console.error("UnhandledRejection:", reason);
-  await sendErrorLog("Erro não tratado (backend)", String(reason), false);
+process.on("unhandledRejection", (reason) => {
+  console.error("[Server] UnhandledRejection:", String(reason));
 });
 
 module.exports = app;

@@ -2,31 +2,31 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth.jsx";
-import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import ContentForm from "./pages/ContentForm";
-import SubjectsPage from "./pages/SubjectsPage";
-import LoginPage from "./pages/LoginPage";
-import PublicAgenda from "./pages/PublicAgenda";
-import PendingUsers from "./pages/PendingUsers";
-import MessagesPage from "./pages/MessagesPage";
+import Layout        from "./components/Layout";
+import Dashboard     from "./pages/Dashboard";
+import ContentForm   from "./pages/ContentForm";
+import SubjectsPage  from "./pages/SubjectsPage";
+import LoginPage     from "./pages/LoginPage";
+import PublicAgenda  from "./pages/PublicAgenda";
+import PendingUsers  from "./pages/PendingUsers";
+import MessagesPage  from "./pages/MessagesPage";
 import AttendancePage from "./pages/AttendancePage";
-import GalleryPage from "./pages/GalleryPage";
+import GalleryPage   from "./pages/GalleryPage";
 
-function ProtectedRoute({ children }) {
+const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", color:"var(--text-secondary)" }}>Carregando...</div>;
+  if (loading) return <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",color:"var(--text-secondary)" }}>Carregando...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return children;
-}
+};
 
-function AdminRoute({ children }) {
+const AdminRoute = ({ children }) => {
   const { user, loading, isAdmin } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin()) return <Navigate to="/" replace />;
   return children;
-}
+};
 
 function AppRoutes() {
   return (
