@@ -1,103 +1,129 @@
-// ============================================================
-// StudyHub v2 — pages/PendingUsers.jsx
-// Painel de aprovação de cadastros (só Mazur acessa)
-// ============================================================
-
+// StudyHub v3 — PendingUsers.jsx — cadastros pendentes + usuários existentes
 import React, { useState, useEffect } from "react";
-import { contentApi } from "../utils/api";
+import api from "../utils/api";
 import styles from "./PendingUsers.module.css";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("studyhub_token")}`,
-  "Content-Type": "application/json",
-});
-
 export default function PendingUsers() {
-  const [pending, setPending] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg]         = useState(null);
+  const [pending, setPending]   = useState([]);
+  const [users, setUsers]       = useState([]);
+  const [tab, setTab]           = useState("pending"); // pending | users
+  const [loading, setLoading]   = useState(true);
+  const [msg, setMsg]           = useState(null);
 
-  const fetchPending = async () => {
+  useEffect(() => { fetchAll(); }, []);
+
+  const fetchAll = async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${BASE_URL}/api/auth/pending`, { headers: authHeader() });
-      const data = await res.json();
-      setPending(data.data || []);
-    } catch { setPending([]); }
+      const [p, u] = await Promise.all([
+        api.get("/api/auth/pending"),
+        api.get("/api/auth/users"),
+      ]);
+      setPending(p.data || []);
+      setUsers(u.data || []);
+    } catch {}
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchPending(); }, []);
-
-  const handleApprove = async (id, username) => {
-    try {
-      await fetch(`${BASE_URL}/api/auth/approve/${id}`, { method: "POST", headers: authHeader() });
-      setMsg({ ok: true, text: `✅ ${username} aprovado!` });
-      fetchPending();
-    } catch { setMsg({ ok: false, text: "Erro ao aprovar." }); }
+  const notify = (text, ok = true) => {
+    setMsg({ text, ok });
     setTimeout(() => setMsg(null), 3000);
   };
 
-  const handleReject = async (id, username) => {
-    if (!confirm(`Rejeitar o cadastro de "${username}"?`)) return;
-    try {
-      await fetch(`${BASE_URL}/api/auth/reject/${id}`, { method: "POST", headers: authHeader() });
-      setMsg({ ok: true, text: `🗑️ ${username} rejeitado.` });
-      fetchPending();
-    } catch { setMsg({ ok: false, text: "Erro ao rejeitar." }); }
-    setTimeout(() => setMsg(null), 3000);
+  const approve = async (id) => {
+    try { await api.post(`/api/auth/approve/${id}`); notify("✅ Aprovado!"); fetchAll(); }
+    catch (e) { notify("❌ " + e.message, false); }
   };
 
-  const roleLabel = { estudante: "📚 Estudante", amigo: "🤝 Amigo", admin: "🛡️ Admin" };
+  const reject = async (id) => {
+    if (!confirm("Rejeitar este cadastro?")) return;
+    try { await api.post(`/api/auth/reject/${id}`); notify("🗑️ Rejeitado."); fetchAll(); }
+    catch (e) { notify("❌ " + e.message, false); }
+  };
+
+  const removeUser = async (id, name) => {
+    if (!confirm(`Remover acesso de "${name}"? Esta ação não pode ser desfeita.`)) return;
+    try { await api.delete(`/api/auth/users/${id}`); notify(`🗑️ Acesso de "${name}" removido.`); fetchAll(); }
+    catch (e) { notify("❌ " + e.message, false); }
+  };
+
+  const ROLE_LABEL = { admin: "🛡️ Admin", estudante: "🎓 Estudante", amigo: "🤝 Amigo" };
+  const ROLE_COLOR = { admin: "#ED4245", estudante: "#5865F2", amigo: "#57F287" };
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h2 className={styles.title}>🔔 Cadastros Pendentes</h2>
-        <span className={styles.count}>{pending.length}</span>
+        <h2 className={styles.title}>Gerenciamento de Acesso</h2>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${tab === "pending" ? styles.tabActive : ""}`} onClick={() => setTab("pending")}>
+            Pendentes {pending.length > 0 && <span className={styles.badge}>{pending.length}</span>}
+          </button>
+          <button className={`${styles.tab} ${tab === "users" ? styles.tabActive : ""}`} onClick={() => setTab("users")}>
+            Usuários {users.length > 0 && <span className={styles.badgeGray}>{users.length}</span>}
+          </button>
+        </div>
       </div>
 
-      {msg && (
-        <div className={msg.ok ? styles.success : styles.error}>{msg.text}</div>
-      )}
+      {msg && <div className={`${styles.msg} ${msg.ok ? styles.msgOk : styles.msgErr}`}>{msg.text}</div>}
 
       {loading ? (
-        <div className={styles.loading}>⏳ Carregando...</div>
-      ) : pending.length === 0 ? (
-        <div className={styles.empty}>
-          <span>✅</span>
-          <p>Nenhum cadastro pendente. Tudo em dia!</p>
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {pending.map((p) => (
-            <div key={p._id} className={styles.card}>
-              <div className={styles.cardInfo}>
-                <span className={styles.username}>👤 {p.username}</span>
-                <span className={styles.role}>{roleLabel[p.role] || p.role}</span>
-                <span className={styles.date}>
-                  Solicitado em {new Date(p.requestedAt).toLocaleDateString("pt-BR")}
-                </span>
-              </div>
-              <div className={styles.cardActions}>
-                <button
-                  className={styles.approveBtn}
-                  onClick={() => handleApprove(p._id, p.username)}
-                >
-                  ✅ Aprovar
-                </button>
-                <button
-                  className={styles.rejectBtn}
-                  onClick={() => handleReject(p._id, p.username)}
-                >
-                  ❌ Rejeitar
-                </button>
-              </div>
+        <div className={styles.empty}>Carregando...</div>
+      ) : tab === "pending" ? (
+        <>
+          {pending.length === 0 ? (
+            <div className={styles.empty}>
+              <span>✅</span>
+              <p>Nenhum cadastro pendente.</p>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className={styles.list}>
+              {pending.map((u) => (
+                <div key={u._id} className={styles.card}>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.avatar}>{u.username[0].toUpperCase()}</div>
+                    <div>
+                      <p className={styles.name}>{u.username}</p>
+                      <span className={styles.roleTag} style={{ background: `${ROLE_COLOR[u.role] || "#5865F2"}22`, color: ROLE_COLOR[u.role] || "#5865F2" }}>
+                        {ROLE_LABEL[u.role] || u.role}
+                      </span>
+                      <p className={styles.date}>Solicitado em {new Date(u.requestedAt || u.createdAt).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                  <div className={styles.actions}>
+                    <button className={styles.approveBtn} onClick={() => approve(u._id)}>✅ Aprovar</button>
+                    <button className={styles.rejectBtn}  onClick={() => reject(u._id)}>❌ Rejeitar</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {users.length === 0 ? (
+            <div className={styles.empty}><span>👥</span><p>Nenhum usuário cadastrado ainda.</p></div>
+          ) : (
+            <div className={styles.list}>
+              {users.map((u) => (
+                <div key={u._id} className={styles.card}>
+                  <div className={styles.cardLeft}>
+                    <div className={styles.avatar}>{u.username[0].toUpperCase()}</div>
+                    <div>
+                      <p className={styles.name}>{u.username}</p>
+                      <span className={styles.roleTag} style={{ background: `${ROLE_COLOR[u.role] || "#5865F2"}22`, color: ROLE_COLOR[u.role] || "#5865F2" }}>
+                        {ROLE_LABEL[u.role] || u.role}
+                      </span>
+                      <p className={styles.date}>Cadastrado em {new Date(u.createdAt).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  </div>
+                  <div className={styles.actions}>
+                    <button className={styles.rejectBtn} onClick={() => removeUser(u._id, u.username)}>🗑️ Remover acesso</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

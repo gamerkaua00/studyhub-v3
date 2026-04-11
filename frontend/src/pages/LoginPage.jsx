@@ -1,184 +1,109 @@
-// ============================================================
-// StudyHub v2 — pages/LoginPage.jsx
-// ============================================================
-
+// StudyHub v3 — LoginPage.jsx — Design melhorado
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth.jsx";
 import styles from "./LoginPage.module.css";
 
 export default function LoginPage() {
-  const navigate        = useNavigate();
-  const { login }       = useAuth();
-  const [form, setForm] = useState({ username: "", password: "" });
-  const [error, setError]   = useState(null);
+  const { login } = useAuth();
+  const navigate  = useNavigate();
+  const [form, setForm]     = useState({ username: "", password: "" });
+  const [mode, setMode]     = useState("login"); // login | register
+  const [role, setRole]     = useState("estudante");
   const [loading, setLoading] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
+  const [error, setError]   = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
       await login(form.username, form.password);
       navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Usuário ou senha incorretos.");
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!form.username || !form.password) return setError("Preencha todos os campos.");
+    setLoading(true); setError(null);
+    try {
+      const res  = await fetch(`${BASE_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: form.username, password: form.password, role }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess("✅ Solicitação enviada! Aguarde aprovação do administrador.");
+        setMode("login"); setForm({ username: "", password: "" });
+      } else { setError(data.message); }
+    } catch { setError("Erro de conexão. Tente novamente."); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        {/* Logo */}
         <div className={styles.logo}>
           <span className={styles.logoIcon}>📚</span>
-          <h1 className={styles.logoText}>StudyHub</h1>
-          <p className={styles.logoSub}>Plataforma de Gerenciamento de Estudos</p>
+          <h1 className={styles.title}>StudyHub</h1>
+          <p className={styles.subtitle}>Sistema de gerenciamento de estudos</p>
         </div>
 
-        {/* Formulário de login */}
-        {!showRegister ? (
-          <>
-            <form onSubmit={handleLogin} className={styles.form}>
-              <h2 className={styles.title}>Entrar</h2>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${mode === "login" ? styles.tabActive : ""}`} onClick={() => { setMode("login"); setError(null); setSuccess(null); }}>Entrar</button>
+          <button className={`${styles.tab} ${mode === "register" ? styles.tabActive : ""}`} onClick={() => { setMode("register"); setError(null); setSuccess(null); }}>Solicitar acesso</button>
+        </div>
 
-              {error && <div className={styles.error}>⚠️ {error}</div>}
+        {error   && <div className={styles.error}>⚠️ {error}</div>}
+        {success && <div className={styles.success}>{success}</div>}
 
-              <div className={styles.field}>
-                <label>Usuário</label>
-                <input
-                  type="text"
-                  value={form.username}
-                  onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
-                  placeholder="Seu usuário"
-                  autoFocus
-                  required
-                />
-              </div>
-
-              <div className={styles.field}>
-                <label>Senha</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-                  placeholder="Sua senha"
-                  required
-                />
-              </div>
-
-              <button type="submit" className={styles.submitBtn} disabled={loading}>
-                {loading ? "Entrando..." : "Entrar →"}
-              </button>
-            </form>
-
-            <button
-              className={styles.registerLink}
-              onClick={() => setShowRegister(true)}
-            >
-              Não tem conta? Solicitar cadastro
+        {mode === "login" ? (
+          <form onSubmit={handleLogin} className={styles.form}>
+            <div className={styles.field}>
+              <label>Usuário</label>
+              <input type="text" value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder="Digite seu usuário" autoFocus required />
+            </div>
+            <div className={styles.field}>
+              <label>Senha</label>
+              <input type="password" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="••••••••" required />
+            </div>
+            <button type="submit" className={styles.submitBtn} disabled={loading}>
+              {loading ? <><span className={styles.spinner} /> Entrando...</> : "Entrar"}
             </button>
-
-            {/* Acesso público à agenda */}
-            <button
-              className={styles.publicLink}
-              onClick={() => navigate("/agenda-publica")}
-            >
-              👁️ Ver agenda sem login
-            </button>
-          </>
+          </form>
         ) : (
-          <RegisterForm onBack={() => setShowRegister(false)} />
+          <form onSubmit={handleRegister} className={styles.form}>
+            <div className={styles.field}>
+              <label>Usuário</label>
+              <input type="text" value={form.username} onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))} placeholder="Escolha um nome de usuário" autoFocus required />
+            </div>
+            <div className={styles.field}>
+              <label>Senha</label>
+              <input type="password" value={form.password} onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))} placeholder="••••••••" required />
+            </div>
+            <div className={styles.field}>
+              <label>Tipo de conta</label>
+              <div className={styles.roleGrid}>
+                {[{ v:"estudante", l:"🎓 Estudante" }, { v:"amigo", l:"🤝 Amigo" }].map((r) => (
+                  <button type="button" key={r.v} className={`${styles.roleBtn} ${role === r.v ? styles.roleActive : ""}`} onClick={() => setRole(r.v)}>{r.l}</button>
+                ))}
+              </div>
+            </div>
+            <button type="submit" className={styles.submitBtn} disabled={loading}>
+              {loading ? <><span className={styles.spinner} /> Enviando...</> : "Solicitar Acesso"}
+            </button>
+          </form>
         )}
+
+        <p className={styles.hint}>
+          {mode === "login" ? "Não tem acesso? Solicite ao administrador." : "Sua solicitação será analisada pelo administrador."}
+        </p>
       </div>
     </div>
-  );
-}
-
-// ── Formulário de cadastro ────────────────────────────────────
-function RegisterForm({ onBack }) {
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-  const [form, setForm] = useState({ username: "", password: "", role: "estudante" });
-  const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch(`${BASE_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatus({ ok: true, msg: data.message });
-      } else {
-        setStatus({ ok: false, msg: data.message });
-      }
-    } catch {
-      setStatus({ ok: false, msg: "Erro de conexão." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleRegister} className={styles.form}>
-      <h2 className={styles.title}>Solicitar Cadastro</h2>
-      <p className={styles.registerInfo}>
-        Sua solicitação será analisada pelo administrador. Você será notificado no Discord.
-      </p>
-
-      {status && (
-        <div className={status.ok ? styles.success : styles.error}>
-          {status.ok ? "✅" : "⚠️"} {status.msg}
-        </div>
-      )}
-
-      {!status?.ok && (
-        <>
-          <div className={styles.field}>
-            <label>Usuário</label>
-            <input
-              type="text"
-              value={form.username}
-              onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
-              placeholder="Escolha um usuário"
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Senha</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
-              placeholder="Escolha uma senha"
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label>Perfil</label>
-            <select value={form.role} onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}>
-              <option value="estudante">📚 Estudante</option>
-              <option value="amigo">🤝 Amigo</option>
-              <option value="admin">🛡️ Admin</option>
-            </select>
-          </div>
-          <button type="submit" className={styles.submitBtn} disabled={loading}>
-            {loading ? "Enviando..." : "Solicitar Cadastro"}
-          </button>
-        </>
-      )}
-
-      <button type="button" className={styles.registerLink} onClick={onBack}>
-        ← Voltar ao login
-      </button>
-    </form>
   );
 }

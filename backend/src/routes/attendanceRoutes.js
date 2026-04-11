@@ -7,26 +7,34 @@ const { sendDiscordNotification } = require("../services/discordNotifier");
 
 router.use(requireAuth);
 
-// Envia/atualiza painel de atendimento no canal correto
 const sendAttendancePanel = async (attendance) => {
   const channelName = attendance.discordChannel;
   if (!channelName) return;
-  const days = attendance.days?.join(", ") || "A definir";
+
+  // Monta campos de horários (suporte a múltiplos)
+  const schedules = attendance.schedules?.length > 0
+    ? attendance.schedules
+    : [{ days: attendance.days || [], startTime: attendance.startTime, endTime: attendance.endTime, room: attendance.room, notes: attendance.notes }];
+
+  const scheduleFields = schedules.map((s, i) => {
+    const days = s.days?.join(", ") || "A definir";
+    const label = schedules.length > 1 ? `📅 Horário ${i + 1}` : "📅 Horário";
+    return { name: label, value: `**${days}** — ${s.startTime} às ${s.endTime}${s.room ? `\n🏫 ${s.room}` : ""}${s.notes ? `\n📝 ${s.notes}` : ""}`, inline: schedules.length > 1 };
+  });
+
   const embed = {
     title: `📋 Horário de Atendimento — ${attendance.subject}`,
     description: "Horários disponíveis para atendimento desta matéria.",
     color: 0x1ABC9C,
     fields: [
-      { name: "👨‍🏫 Professor", value: attendance.teacher,                    inline: true  },
-      { name: "🏫 Sala",      value: attendance.room || "A definir",          inline: true  },
-      { name: "📅 Dias",      value: days || "A definir",                     inline: false },
-      { name: "🕐 Horário",   value: `${attendance.startTime} — ${attendance.endTime}`, inline: true },
+      { name: "👨‍🏫 Professor", value: attendance.teacher, inline: false },
+      ...scheduleFields,
     ],
     timestamp: new Date().toISOString(),
     footer: { text: "StudyHub • Painel de Atendimento — atualizado automaticamente" },
   };
-  if (attendance.notes) embed.fields.push({ name: "📝 Observações", value: attendance.notes, inline: false });
-  await sendDiscordNotification(channelName, "", embed);
+
+  return sendDiscordNotification(channelName, "", embed);
 };
 
 router.get("/", async (req, res) => {
@@ -39,24 +47,22 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const channelName = req.body.subject
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
     const attendance = new Attendance({ ...req.body, discordChannel: channelName });
     await attendance.save();
 
-    // Avisa no #admin-bot para o bot criar o canal
+    // Notifica admin-bot que precisa criar o canal
     await sendDiscordNotification("admin-bot", "", {
-      title: "🏫 Novo Canal de Atendimento",
-      description: `Canal **#${channelName}** precisa ser criado na categoria **🏫 Atendimento**.\nMatéria: **${req.body.subject}** | Professor: **${req.body.teacher}**`,
+      title: "🏫 Novo Canal de Atendimento Solicitado",
+      description: `Canal **#${channelName}** será criado.\nMatéria: **${req.body.subject}** | Professor: **${req.body.teacher}**`,
       color: 0x1ABC9C,
       timestamp: new Date().toISOString(),
-      footer: { text: "StudyHub • O bot criará o canal automaticamente no próximo reinício" },
+      footer: { text: "StudyHub • O canal será criado ao reinicar o bot ou via /reenviar-agenda" },
     });
 
-    // Tenta enviar o painel no canal (se já existir)
+    // Tenta enviar painel (se canal já existir)
     await sendAttendancePanel(attendance);
 
     res.status(201).json({ success: true, data: attendance });

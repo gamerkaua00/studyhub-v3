@@ -1,10 +1,20 @@
-// StudyHub v3 — GalleryPage.jsx
+// StudyHub v3 — GalleryPage.jsx — CORRIGIDO com seleção de tipo
 import React, { useState, useEffect, useRef } from "react";
 import { galleryApi, subjectApi } from "../utils/api";
 import { format } from "date-fns";
 import styles from "./GalleryPage.module.css";
 
-const EMPTY = { subject: "", date: format(new Date(), "yyyy-MM-dd"), title: "", description: "" };
+const PHOTO_TYPES = [
+  { value: "aula",         label: "📖 Aula"         },
+  { value: "prova",        label: "📝 Prova"         },
+  { value: "atividade",    label: "📋 Atividade"     },
+  { value: "avaliacao",    label: "📊 Avaliação"     },
+  { value: "apresentacao", label: "🎤 Apresentação"  },
+  { value: "lista",        label: "📃 Lista"         },
+  { value: "outro",        label: "📁 Outro"         },
+];
+
+const EMPTY = { subject: "", date: format(new Date(), "yyyy-MM-dd"), title: "", description: "", photoType: "aula" };
 
 export default function GalleryPage() {
   const [photos, setPhotos]       = useState([]);
@@ -43,7 +53,7 @@ export default function GalleryPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file) return setError("Selecione uma foto");
+    if (!file)         return setError("Selecione uma foto");
     if (!form.subject) return setError("Selecione a matéria");
     setSaving(true); setError(null);
     try {
@@ -71,11 +81,13 @@ export default function GalleryPage() {
     <div className={styles.page}>
       <div className={styles.formCard}>
         <h2 className={styles.title}>📷 Enviar Foto de Aula</h2>
-        <p className={styles.subtitle}>A foto será enviada automaticamente no canal da matéria no Discord.</p>
+        <p className={styles.subtitle}>A foto será publicada no canal da matéria no Discord com o tipo selecionado.</p>
+
         {error   && <div className={styles.error}>⚠️ {error}</div>}
         {success && <div className={styles.success}>{success}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {/* Área de upload */}
           <div className={styles.uploadArea} onClick={() => fileRef.current.click()}>
             {preview ? (
               <img src={preview} alt="Preview" className={styles.preview} />
@@ -87,6 +99,23 @@ export default function GalleryPage() {
               </div>
             )}
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className={styles.fileInput} />
+          </div>
+
+          {/* NOVO: Tipo da foto */}
+          <div className={styles.field}>
+            <label>Tipo do Conteúdo *</label>
+            <div className={styles.typeGrid}>
+              {PHOTO_TYPES.map((t) => (
+                <button
+                  type="button"
+                  key={t.value}
+                  className={`${styles.typeBtn} ${form.photoType === t.value ? styles.typeActive : ""}`}
+                  onClick={() => setForm((p) => ({ ...p, photoType: t.value }))}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.row}>
@@ -120,7 +149,7 @@ export default function GalleryPage() {
 
       <div className={styles.gallerySection}>
         <div className={styles.galleryHeader}>
-          <h3 className={styles.listTitle}>Galeria de Aulas <span className={styles.count}>{photos.length}</span></h3>
+          <h3 className={styles.listTitle}>Galeria <span className={styles.count}>{photos.length}</span></h3>
           <select value={filterSubject} onChange={(e) => setFilter(e.target.value)} className={styles.filterSelect}>
             <option value="">Todas as matérias</option>
             {uniqueSubjects.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -138,6 +167,11 @@ export default function GalleryPage() {
                   <span className={styles.photoSubject}>{photo.subject}</span>
                   <span className={styles.photoDate}>{photo.date?.split("-").reverse().join("/")}</span>
                 </div>
+                {photo.photoType && (
+                  <span className={styles.photoType}>
+                    {PHOTO_TYPES.find((t) => t.value === photo.photoType)?.label || photo.photoType}
+                  </span>
+                )}
                 {photo.title && <p className={styles.photoTitle}>{photo.title}</p>}
                 <button className={styles.deletePhotoBtn} onClick={() => handleDelete(photo._id)}>🗑️</button>
               </div>

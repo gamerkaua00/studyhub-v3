@@ -81,4 +81,25 @@ router.get("/me", async (req, res) => {
   res.json({ success: true, username: session.user, role: session.role });
 });
 
+
+// GET /api/auth/users — lista usuários aprovados (só admin)
+router.get("/users", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.json({ success: true, data: users });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// DELETE /api/auth/users/:id — remove acesso de usuário (só admin)
+router.delete("/users/:id", requireAdmin, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "Usuário não encontrado." });
+    // Remove sessões ativas do usuário
+    const Session = require("../models/Session");
+    await Session.deleteMany({ username: user.username });
+    res.json({ success: true, message: `Acesso de "${user.username}" removido.` });
+  } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 module.exports = router;
