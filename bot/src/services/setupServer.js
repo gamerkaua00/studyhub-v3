@@ -263,11 +263,24 @@ const sendFixedMessages = async (guild, channels) => {
   if (bemVindo) {
     const msgs = await bemVindo.messages.fetch({ limit: 1 });
     if (msgs.size === 0) {
-      await bemVindo.send({ embeds: [{ title: "🎉 Bem-vindo(a) ao StudyHub IFPR!",
-        description: "Servidor oficial de estudos do grupo.\n\n📅 Agenda automática\n🔔 Notificações no horário certo\n💬 Espaço para dúvidas\n📖 Salas de estudo em grupo\n\n*Você recebe o cargo **Estudante** automaticamente ao entrar.*",
-        color: 0x57F287,
-        fields: [{ name: "📌 Primeiros passos", value: "1. Leia **#regras**\n2. Use comandos em **#use-aqui**\n3. Explore os canais!", inline: false }],
-        footer: { text: "StudyHub IFPR • Bons estudos! 📚" }, timestamp: new Date().toISOString() }] });
+      await bemVindo.send({ embeds: [{
+          author: { name: "📚 StudyHub IFPR" },
+          title: "Bem-vindo(a) ao servidor de estudos!",
+          description:
+            "Este é o espaço oficial do grupo para organizar os estudos.\n\n" +
+            "**O que você encontra aqui:**\n" +
+            "📅 Agenda de aulas, provas e atividades atualizada automaticamente\n" +
+            "🔔 Notificações automáticas no horário certo\n" +
+            "🏫 Canais de atendimento por matéria\n" +
+            "📖 Salas de voz para estudar em grupo\n\n" +
+            "*Você recebeu o cargo **Estudante** automaticamente. Bons estudos!* 📚",
+          color: 0x57F287,
+          fields: [
+            { name: "🚀 Por onde começar?", value: "① Leia as regras em **#regras**\n② Use comandos em **#use-aqui**\n③ Veja a agenda em **#agenda**", inline: false },
+          ],
+          image: { url: "https://i.imgur.com/placeholder.png" },
+          footer: { text: "StudyHub IFPR • Sistema de Estudos v3.1.2" },
+          timestamp: new Date().toISOString() }] });
     }
   }
 

@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { format, addMonths, subMonths, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { contentApi, holidayApi, eventApi } from "../utils/api";
+import { TYPE_COLORS, TYPE_EMOJI as EMOJI_MAP, getTextColor, hexToRgba } from "../utils/colorUtils";
 import styles from "./Dashboard.module.css";
 
-const TYPE_EMOJI = { Aula:"📖",Revisão:"🔄",Prova:"📝",Apresentação:"🎤",Atividade:"📋",Avaliação:"📊",Lista:"📃" };
-const TYPE_COLOR = { Aula:"#5865F2",Revisão:"#57F287",Prova:"#ED4245",Apresentação:"#EB459E",Atividade:"#FEE75C",Avaliação:"#E67E22",Lista:"#9B59B6" };
+const TYPE_EMOJI = EMOJI_MAP;
+const TYPE_COLOR  = TYPE_COLORS;
 
 const getBRT = () => {
   const now = new Date();
@@ -199,12 +200,12 @@ export default function Dashboard() {
                     {holiday && <span className={styles.holidayTag} title={holiday.name}>🏖️</span>}
                     <div className={styles.cellEvents}>
                       {dayConts.slice(0, 3).map((c) => (
-                        <div key={c._id} className={styles.cellEvent} style={{ background: TYPE_COLOR[c.type] || "#5865F2" }}>
+                        <div key={c._id} className={styles.cellEvent} style={{ background: TYPE_COLOR[c.type]||"#5865F2", color: getTextColor(TYPE_COLOR[c.type]||"#5865F2") }}>
                           {c.time} {c.title}
                         </div>
                       ))}
                       {dayEvts.map((e) => (
-                        <div key={e._id} className={styles.cellEvent} style={{ background: e.color || "#FEE75C", color: "#000" }}>
+                        <div key={e._id} className={styles.cellEvent} style={{ background: e.color||"#FEE75C", color: getTextColor(e.color||"#FEE75C") }}>
                           {e.icon} {e.title}
                         </div>
                       ))}
@@ -256,7 +257,7 @@ export default function Dashboard() {
             ) : filteredContents.map((c) => {
               const [y,m,d] = c.date.split("-");
               return (
-                <div key={c._id} className={styles.contentCard} style={{ borderLeftColor: TYPE_COLOR[c.type] || "#5865F2" }}>
+                <div key={c._id} className={styles.contentCard} style={{ borderLeftColor: TYPE_COLOR[c.type]||"#5865F2" }}>
                   <div className={styles.cardTop}>
                     <div className={styles.cardMeta}>
                       <span className={styles.cardSubject}>{c.subject}</span>

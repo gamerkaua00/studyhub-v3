@@ -9,7 +9,7 @@ const http     = require("http");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
-const VER  = "3.1.1";
+const VER  = "3.1.2";
 
 app.use(cors({
   origin: [
@@ -34,6 +34,8 @@ app.use("/api/gallery",    require("./routes/galleryRoutes"));
 app.use("/api/holidays",   require("./routes/holidayRoutes"));
 app.use("/api/events",     require("./routes/eventRoutes"));
 app.use("/api/stats",      require("./routes/statsRoutes"));
+app.use("/api/pdf",        require("./routes/pdfRoutes"));
+app.use("/api/faults",     require("./routes/faultRoutes"));
 
 app.get("/health", (req, res) =>
   res.json({ status: "ok", version: VER, uptime: Math.floor(process.uptime()), ts: new Date().toISOString() })

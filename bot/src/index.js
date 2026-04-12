@@ -63,7 +63,7 @@ client.once("clientReady", async (c) => {
   console.log(`\n✅ Bot online: ${c.user.tag}`);
   console.log(`📡 ${c.guilds.cache.size} servidor(es)\n`);
 
-  c.user.setPresence({ activities: [{ name: "📚 StudyHub | /ajuda" }], status: "online" });
+  c.user.setPresence({ activities: [{ name: "📚 StudyHub v3.1.2 | /ajuda" }], status: "online" });
 
   // Registra slash commands e configura servidores em paralelo
   await Promise.all([

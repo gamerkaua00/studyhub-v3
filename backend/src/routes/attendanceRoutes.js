@@ -3,51 +3,9 @@ const express    = require("express");
 const router     = express.Router();
 const Attendance = require("../models/Attendance");
 const { requireAuth } = require("../middleware/auth");
-const { sendDiscordNotification } = require("../services/discordNotifier");
+const { sendAttendancePanel, sendDiscordNotification } = require("../services/discordNotifier");
 
 router.use(requireAuth);
-
-// Envia painel no Discord — com log e tratamento de erro explícito
-const sendAttendancePanel = async (attendance) => {
-  const channelName = attendance.discordChannel;
-  if (!channelName) {
-    console.warn(`[Attendance] Canal não definido para: ${attendance.subject}`);
-    return null;
-  }
-
-  const schedules = (attendance.schedules?.length > 0)
-    ? attendance.schedules
-    : [{ days: attendance.days || [], startTime: attendance.startTime || "08:00", endTime: attendance.endTime || "10:00", room: attendance.room || "", notes: attendance.notes || "" }];
-
-  const scheduleFields = schedules.map((s, i) => {
-    const days  = Array.isArray(s.days) && s.days.length > 0 ? s.days.join(", ") : "A definir";
-    const label = schedules.length > 1 ? `📅 Horário ${i + 1}` : "📅 Horário";
-    let val = `**${days}** — ${s.startTime} às ${s.endTime}`;
-    if (s.room)  val += `\n🏫 ${s.room}`;
-    if (s.notes) val += `\n📝 ${s.notes}`;
-    return { name: label, value: val, inline: schedules.length > 1 };
-  });
-
-  const embed = {
-    title: `📋 Atendimento — ${attendance.subject}`,
-    description: "Horários disponíveis para tirar dúvidas.",
-    color: 0x1ABC9C,
-    fields: [
-      { name: "👨‍🏫 Professor", value: attendance.teacher || "—", inline: false },
-      ...scheduleFields,
-    ],
-    timestamp: new Date().toISOString(),
-    footer: { text: "StudyHub v3.1.1 • Atualizado automaticamente" },
-  };
-
-  const result = await sendDiscordNotification(channelName, "", embed);
-  if (result) {
-    console.log(`[Attendance] ✅ Painel enviado em #${channelName}`);
-  } else {
-    console.warn(`[Attendance] ⚠️ Canal #${channelName} não encontrado no Discord`);
-  }
-  return result;
-};
 
 router.get("/", async (req, res) => {
   try {

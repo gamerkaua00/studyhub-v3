@@ -82,4 +82,17 @@ export const publicApi = {
   getExams:  ()  => api.get("/api/public/exams"),
 };
 
+export const pdfApi = {
+  convert: (fd) => api.post("/api/pdf/convert", fd, { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000, responseType: "blob" }),
+  convertMultiple: (fd) => api.post("/api/pdf/convert", fd, { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000 }),
+};
+
+export const faultApi = {
+  getSummary: (p) => api.get("/api/faults/summary", { params: p }),
+  getAll:     (p) => api.get("/api/faults", { params: p }),
+  create:     (d) => api.post("/api/faults", d),
+  update:     (id,d) => api.put(`/api/faults/${id}`, d),
+  delete:     (id) => api.delete(`/api/faults/${id}`),
+};
+
 export default api;

@@ -1,18 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="StudyHub — Plataforma de gerenciamento de estudos com bot Discord" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
-    <title>StudyHub</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/studyhub-v3/assets/index-CjGDkkfx.js"></script>
-    <link rel="stylesheet" crossorigin href="/studyhub-v3/assets/index-C6Ve7xeq.css">
+    <title>StudyHub IFPR</title>
+    <link rel="manifest" href="/studyhub-v3/manifest.json" />
+    <meta name="theme-color" content="#5865F2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="StudyHub" />
+    <meta name="description" content="Sistema de gerenciamento de estudos do IFPR" />
+    <script>
+      (function(l){if(l.search[1]==="/"){var d=l.search.slice(1).split("&").map(function(s){return s.replace(/~and~/g,"&")}).join("?");window.history.replaceState(null,null,l.pathname.slice(0,-1)+d+l.hash)}}(window.location));
+    </script>
+    <script type="module" crossorigin src="/studyhub-v3/assets/index-CnrVvLFZ.js"></script>
+    <link rel="stylesheet" crossorigin href="/studyhub-v3/assets/index-CZkaZoDv.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      if("serviceWorker"in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/studyhub-v3/sw.js").catch(()=>{})})}
+    </script>
   </body>
 </html>

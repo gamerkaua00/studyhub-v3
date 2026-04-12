@@ -2,7 +2,7 @@
 require("dotenv").config();
 const Content = require("../models/Content");
 const Message = require("../models/Message");
-const { sendMainNotification, sendDayBeforeNotification, sendExamPoll, sendScheduledMessage, sendMonthlyAgenda, sendDiscordNotification } = require("./discordNotifier");
+const { sendMainNotification, sendThirtyMinNotification, sendDayBeforeNotification, sendExamPoll, sendScheduledMessage, sendMonthlyAgenda, sendDiscordNotification } = require("./discordNotifier");
 
 const getBRT      = () => new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
 const getTodayBRT = () => getBRT().toISOString().split("T")[0];
@@ -43,7 +43,9 @@ const runScheduler = async () => {
     for (const c of dueSoon) {
       try {
         const [y, m, d] = c.date.split("-");
-        await sendDiscordNotification(c.discordChannel || "conteudos", "", {
+        await sendThirtyMinNotification(c);
+        console.log(`[Scheduler] ⏰ 30min antes: ${c.title}`);
+        //await sendDiscordNotification(c.discordChannel || "conteudos", "", {
           title: `⏰ Em 30 minutos: ${c.title}`,
           description: `**${c.subject}** — ${c.type} às ${c.time}`,
           color: 0xFEE75C,

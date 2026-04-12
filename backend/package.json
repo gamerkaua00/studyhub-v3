@@ -1,6 +1,6 @@
 {
   "name": "studyhub-backend",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -15,7 +15,9 @@
     "axios": "^1.7.2",
     "cloudinary": "^1.41.3",
     "multer": "^1.4.5-lts.1",
-    "bcryptjs": "^2.4.3"
+    "bcryptjs": "^2.4.3",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.33.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.3"

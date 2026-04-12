@@ -2,7 +2,7 @@
 const ALLOWED_CHANNEL = "use-aqui";
 const ADMIN_SLASH = [
   "clear", "mute", "cargo", "unmute",
-  "avisar", "reenviar-agenda", "info-servidor"
+  "avisar", "reenviar-agenda", "info-servidor", "faltas"
 ];
 
 module.exports = {
