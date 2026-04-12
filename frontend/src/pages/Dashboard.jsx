@@ -1,7 +1,7 @@
 // StudyHub v3 — Dashboard.jsx — REVISADO COMPLETO
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { format, addMonths, subMonths, startOfWeek, addDays } from "date-fns";
+import { format, addMonths, subMonths, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { contentApi, holidayApi, eventApi } from "../utils/api";
 import styles from "./Dashboard.module.css";
