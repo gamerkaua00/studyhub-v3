@@ -1,9 +1,5 @@
-// ============================================================
-// StudyHub v3 — services/cloudinaryService.js
-// Configuração e helpers do Cloudinary para upload de fotos
-// ============================================================
-
-const cloudinary = require("cloudinary").v2;
+// StudyHub v3.1.1 — services/cloudinaryService.js
+const cloudinary = require("cloudinary");
 const { Readable } = require("stream");
 
 cloudinary.config({
@@ -12,25 +8,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-/**
- * Faz upload de um buffer (arquivo em memória) para o Cloudinary
- * @param {Buffer} buffer - Conteúdo do arquivo
- * @param {string} folder - Pasta no Cloudinary (ex: "studyhub/fisica")
- * @param {string} filename - Nome público do arquivo
- * @returns {Promise<{url: string, publicId: string}>}
- */
 const uploadBuffer = (buffer, folder, filename) => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        public_id: filename,
-        resource_type: "auto",
-        transformation: [
-          { quality: "auto:good" },
-          { fetch_format: "auto" },
-        ],
-      },
+    const stream = cloudinary.v2.uploader.upload_stream(
+      { folder, public_id: filename, resource_type: "auto", quality: "auto:good" },
       (error, result) => {
         if (error) return reject(error);
         resolve({ url: result.secure_url, publicId: result.public_id });
@@ -40,15 +21,9 @@ const uploadBuffer = (buffer, folder, filename) => {
   });
 };
 
-/**
- * Deleta um arquivo do Cloudinary pelo publicId
- */
 const deleteFile = async (publicId) => {
-  try {
-    await cloudinary.uploader.destroy(publicId);
-  } catch (err) {
-    console.error("[Cloudinary] Erro ao deletar:", err.message);
-  }
+  try { await cloudinary.v2.uploader.destroy(publicId); }
+  catch (err) { console.error("[Cloudinary] Erro ao deletar:", err.message); }
 };
 
-module.exports = { uploadBuffer, deleteFile, cloudinary };
+module.exports = { uploadBuffer, deleteFile };

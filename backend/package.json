@@ -1,6 +1,6 @@
 {
   "name": "studyhub-backend",
-  "version": "3.0.0",
+  "version": "3.1.1",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -15,7 +15,7 @@
     "axios": "^1.7.2",
     "cloudinary": "^1.41.3",
     "multer": "^1.4.5-lts.1",
-    "multer-storage-cloudinary": "^4.0.0"
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.3"

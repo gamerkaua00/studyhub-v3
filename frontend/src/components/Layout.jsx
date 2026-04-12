@@ -21,6 +21,7 @@ export default function Layout({ children }) {
     "/mensagens":   "Mensagens",
     "/atendimento": "Atendimento",
     "/galeria":     "Galeria",
+    "/estatisticas": "Estatísticas",
     "/cadastros":   "Cadastros",
   };
   const pageName = PAGE_NAMES[location.pathname] || "StudyHub";
@@ -49,6 +50,7 @@ export default function Layout({ children }) {
     { to: "/mensagens",   icon: "📢",  label: "Mensagens"    },
     { to: "/atendimento", icon: "🏫",  label: "Atendimento"  },
     { to: "/galeria",     icon: "📷",  label: "Galeria"      },
+    { to: "/estatisticas", icon: "📊",  label: "Estatísticas" },
     { section: "Sistema" },
     ...(isAdmin() ? [{ to: "/cadastros", icon: "🔔", label: "Cadastros", badge: pendingCount }] : []),
     { external: true, href: "#", icon: "👁️", label: "Agenda Pública" },

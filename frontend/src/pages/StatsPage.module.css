@@ -1,0 +1,30 @@
+.page { display: flex; flex-direction: column; gap: 1.25rem; max-width: 1000px; }
+.header { display: flex; align-items: center; gap: 1rem; }
+.navBtn { background: var(--color-bg-card); border: 1px solid var(--color-border); color: var(--text-primary); width: 32px; height: 32px; border-radius: var(--radius-sm); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.monthTitle { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.loading { display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); padding: 2rem 0; }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--color-border); border-top-color: var(--color-accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.empty  { color: var(--text-secondary); padding: 2rem 0; }
+.cards  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+.summaryCard { background: var(--color-bg-card); border: 1px solid var(--color-border); border-top: 3px solid; border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; text-align: center; }
+.cardIcon  { font-size: 1.5rem; }
+.cardValue { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.cardLabel { font-size: 0.72rem; color: var(--text-secondary); }
+.chartsRow { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.chartCard { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.chartTitle { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
+.barRow    { display: flex; align-items: center; gap: 0.6rem; }
+.barLabel  { font-size: 0.78rem; color: var(--text-secondary); width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barTrack  { flex: 1; background: var(--color-bg-tertiary); border-radius: 99px; height: 8px; overflow: hidden; }
+.barFill   { height: 100%; border-radius: 99px; transition: width 0.5s ease; min-width: 2px; }
+.barCount  { font-size: 0.75rem; font-weight: 700; color: var(--text-primary); width: 24px; text-align: right; flex-shrink: 0; }
+.noData    { font-size: 0.82rem; color: var(--text-muted); }
+.examCard  { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem; }
+.examList  { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; }
+.examRow   { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.65rem 0.85rem; background: var(--color-bg-tertiary); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+.examRow.examUrgent { border-color: var(--color-danger); background: var(--color-danger-bg); }
+.examTitle { font-size: 0.87rem; font-weight: 600; color: var(--text-primary); }
+.examMeta  { font-size: 0.72rem; color: var(--text-secondary); }
+.examDays  { font-size: 0.8rem; font-weight: 700; color: var(--color-success); white-space: nowrap; }
+.examDays.examDaysUrgent { color: var(--color-danger); }
+@media (max-width: 700px) { .cards { grid-template-columns: repeat(2,1fr); } .chartsRow { grid-template-columns: 1fr; } }

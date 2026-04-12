@@ -1,11 +1,12 @@
-// StudyHub v3 — middleware/auth.js — CORRIGIDO com sessões no MongoDB
+// StudyHub v3.1.1 — middleware/auth.js — COM BCRYPT
+const bcrypt  = require("bcryptjs");
 const Session = require("../models/Session");
 
 const ADMIN_USER = "mazur";
-const ADMIN_PASS = "020683";
+const ADMIN_PASS = "020683"; // usado só para comparação
 
 const generateToken = () =>
-  Math.random().toString(36).substring(2) + Date.now().toString(36) + Math.random().toString(36).substring(2);
+  Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 const createSession = async (username, role = "estudante") => {
   const token = generateToken();
@@ -16,8 +17,8 @@ const createSession = async (username, role = "estudante") => {
 const verifySession = async (token) => {
   if (!token) return null;
   try {
-    const session = await Session.findOne({ token });
-    return session ? { user: session.username, role: session.role } : null;
+    const s = await Session.findOne({ token });
+    return s ? { user: s.username, role: s.role } : null;
   } catch { return null; }
 };
 
@@ -45,4 +46,12 @@ const requireAdmin = async (req, res, next) => {
   next();
 };
 
-module.exports = { createSession, verifySession, destroySession, requireAuth, requireAdmin, ADMIN_USER, ADMIN_PASS };
+// Hash de senha para novos usuários
+const hashPassword = async (password) => bcrypt.hash(password, 10);
+const checkPassword = async (plain, hash) => {
+  // Suporta senhas antigas (texto puro) e novas (hash)
+  if (hash.startsWith("$2")) return bcrypt.compare(plain, hash);
+  return plain === hash; // compatibilidade com senhas antigas
+};
+
+module.exports = { createSession, verifySession, destroySession, requireAuth, requireAdmin, hashPassword, checkPassword, ADMIN_USER, ADMIN_PASS };

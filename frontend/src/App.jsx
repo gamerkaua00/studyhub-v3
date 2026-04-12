@@ -12,6 +12,7 @@ import PendingUsers  from "./pages/PendingUsers";
 import MessagesPage  from "./pages/MessagesPage";
 import AttendancePage from "./pages/AttendancePage";
 import GalleryPage   from "./pages/GalleryPage";
+import StatsPage     from "./pages/StatsPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/mensagens"      element={<ProtectedRoute><Layout><MessagesPage /></Layout></ProtectedRoute>} />
       <Route path="/atendimento"    element={<ProtectedRoute><Layout><AttendancePage /></Layout></ProtectedRoute>} />
       <Route path="/galeria"        element={<ProtectedRoute><Layout><GalleryPage /></Layout></ProtectedRoute>} />
+      <Route path="/estatisticas"    element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
       <Route path="/cadastros"      element={<AdminRoute><Layout><PendingUsers /></Layout></AdminRoute>} />
       <Route path="*"               element={<Navigate to="/" replace />} />
     </Routes>

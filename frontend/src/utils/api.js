@@ -57,7 +57,7 @@ export const attendanceApi = {
 
 export const galleryApi = {
   getAll:  (p)  => api.get("/api/gallery", { params: p }),
-  upload:  (fd) => api.post("/api/gallery", fd, { headers: { "Content-Type": "multipart/form-data" } }),
+  upload:  (fd) => api.post("/api/gallery", fd, { headers: { "Content-Type": "multipart/form-data" }, timeout: 60000 }),
   delete:  (id) => api.delete(`/api/gallery/${id}`),
 };
 
