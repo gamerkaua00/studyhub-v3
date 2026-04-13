@@ -1,5 +1,4 @@
-// StudyHub v3.1.2 — routes/pdfRoutes.js
-// Converte imagens para PDF usando pdf-lib (sem sharp)
+// StudyHub v3.1.3 — routes/pdfRoutes.js
 const express = require("express");
 const router  = express.Router();
 const multer  = require("multer");
@@ -11,108 +10,98 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024, files: 20 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Apenas imagens são permitidas"));
+    const ok = ["image/jpeg","image/jpg","image/png","image/webp"].includes(file.mimetype.toLowerCase());
+    if (ok) cb(null, true);
+    else cb(new Error(`Formato não suportado: ${file.mimetype}. Use JPG ou PNG.`));
   },
 });
 
-// Converte imagem para JPEG/PNG compatível com pdf-lib
-// pdf-lib aceita: JPEG e PNG nativamente
-const prepareImage = async (file) => {
+const embedImageInPdf = async (pdfDoc, fileBuffer, mimetype) => {
   const { PDFDocument } = require("pdf-lib");
-  const mime = file.mimetype.toLowerCase();
-  if (mime === "image/jpeg" || mime === "image/jpg" || mime === "image/png") {
-    return { buffer: file.buffer, type: mime.includes("png") ? "png" : "jpg" };
+  const type = mimetype.toLowerCase();
+  let img;
+  try {
+    if (type.includes("png")) {
+      img = await pdfDoc.embedPng(fileBuffer);
+    } else {
+      // JPEG, WEBP tratados como JPEG (Discord envia WEBP as JPEG-compatible)
+      img = await pdfDoc.embedJpg(fileBuffer);
+    }
+  } catch {
+    // Fallback: tenta como PNG
+    img = await pdfDoc.embedPng(fileBuffer);
   }
-  // Para WEBP e outros formatos, tenta tratar como JPG (fallback)
-  // Render tem node-canvas disponível às vezes, mas não queremos depender disso
-  // Melhor abordagem: retornar null e pular imagens não suportadas
-  return null;
+  return img;
 };
 
+// POST /api/pdf/convert
 router.post("/convert", upload.array("images", 20), async (req, res) => {
   const files = req.files;
   const mode  = req.body.mode  || "single";
-  const title = req.body.title || "documento";
+  const title = (req.body.title || "documento").replace(/[^a-zA-Z0-9_\-\s]/g, "").trim() || "documento";
 
   if (!files?.length) {
     return res.status(400).json({ success: false, message: "Nenhuma imagem enviada" });
   }
 
-  try {
-    const { PDFDocument } = require("pdf-lib");
+  const { PDFDocument } = require("pdf-lib");
 
+  try {
     if (mode === "single") {
+      // Todas as imagens em um único PDF
       const pdfDoc = await PDFDocument.create();
       let added = 0;
 
       for (const file of files) {
         try {
-          const prepared = await prepareImage(file);
-          if (!prepared) {
-            console.warn(`[PDF] Formato não suportado: ${file.mimetype} — pulando`);
-            continue;
-          }
-          const imgEmbed = prepared.type === "png"
-            ? await pdfDoc.embedPng(prepared.buffer)
-            : await pdfDoc.embedJpg(prepared.buffer);
-
-          const page = pdfDoc.addPage([imgEmbed.width, imgEmbed.height]);
-          page.drawImage(imgEmbed, { x: 0, y: 0, width: imgEmbed.width, height: imgEmbed.height });
+          const img  = await embedImageInPdf(pdfDoc, file.buffer, file.mimetype);
+          const page = pdfDoc.addPage([img.width, img.height]);
+          page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
           added++;
         } catch (e) {
-          console.warn(`[PDF] Erro ao processar imagem: ${e.message}`);
+          console.warn(`[PDF] Pulando imagem (${file.originalname}): ${e.message}`);
         }
       }
 
       if (added === 0) {
-        return res.status(400).json({ success: false, message: "Nenhuma imagem pôde ser convertida. Use apenas JPG ou PNG." });
+        return res.status(422).json({ success: false, message: "Nenhuma imagem pôde ser processada. Verifique se são arquivos JPG ou PNG válidos." });
       }
 
       const pdfBytes = await pdfDoc.save();
-      const safeName = title.replace(/[^a-zA-Z0-9_\-]/g, "_");
+      const safeName = title.replace(/\s+/g, "_");
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${safeName}.pdf"`);
-      res.send(Buffer.from(pdfBytes));
+      res.setHeader("X-Pages", String(added));
+      return res.send(Buffer.from(pdfBytes));
 
     } else {
       // Um PDF por imagem
       const pdfs = [];
 
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
         try {
-          const prepared = await prepareImage(file);
-          if (!prepared) continue;
-
-          const pdfDoc   = await PDFDocument.create();
-          const imgEmbed = prepared.type === "png"
-            ? await pdfDoc.embedPng(prepared.buffer)
-            : await pdfDoc.embedJpg(prepared.buffer);
-
-          const page = pdfDoc.addPage([imgEmbed.width, imgEmbed.height]);
-          page.drawImage(imgEmbed, { x: 0, y: 0, width: imgEmbed.width, height: imgEmbed.height });
-
-          const pdfBytes = await pdfDoc.save();
-          const safeName = `${title.replace(/[^a-zA-Z0-9_\-]/g, "_")}_${i + 1}`;
-          pdfs.push({
-            name: `${safeName}.pdf`,
-            data: Buffer.from(pdfBytes).toString("base64"),
-          });
+          const pdfDoc = await PDFDocument.create();
+          const img    = await embedImageInPdf(pdfDoc, files[i].buffer, files[i].mimetype);
+          const page   = pdfDoc.addPage([img.width, img.height]);
+          page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+          const bytes  = await pdfDoc.save();
+          const name   = `${title.replace(/\s+/g,"_")}_pagina_${i + 1}.pdf`;
+          pdfs.push({ name, data: Buffer.from(bytes).toString("base64") });
         } catch (e) {
-          console.warn(`[PDF] Erro na imagem ${i + 1}: ${e.message}`);
+          console.warn(`[PDF] Erro página ${i+1}: ${e.message}`);
         }
       }
 
       if (pdfs.length === 0) {
-        return res.status(400).json({ success: false, message: "Nenhuma imagem pôde ser convertida. Use JPG ou PNG." });
+        return res.status(422).json({ success: false, message: "Nenhuma imagem pôde ser processada." });
       }
 
-      res.json({ success: true, pdfs, count: pdfs.length });
+      return res.json({ success: true, pdfs, count: pdfs.length });
     }
   } catch (err) {
-    console.error("[PDF] Erro geral:", err.message);
-    res.status(500).json({ success: false, message: `Erro na conversão: ${err.message}` });
+    console.error("[PDF] Erro crítico:", err.message);
+    return res.status(500).json({ success: false, message: `Erro interno: ${err.message}` });
   }
 });
 

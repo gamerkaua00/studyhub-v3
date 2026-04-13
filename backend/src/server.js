@@ -9,7 +9,7 @@ const http     = require("http");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
-const VER  = "3.1.2";
+const VER  = "3.1.3";
 
 app.use(cors({
   origin: [
