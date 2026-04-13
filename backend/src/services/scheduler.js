@@ -45,14 +45,6 @@ const runScheduler = async () => {
         const [y, m, d] = c.date.split("-");
         await sendThirtyMinNotification(c);
         console.log(`[Scheduler] ⏰ 30min antes: ${c.title}`);
-        //await sendDiscordNotification(c.discordChannel || "conteudos", "", {
-          title: `⏰ Em 30 minutos: ${c.title}`,
-          description: `**${c.subject}** — ${c.type} às ${c.time}`,
-          color: 0xFEE75C,
-          timestamp: new Date().toISOString(),
-          footer: { text: "StudyHub v3.1.1 • Lembrete 30min" },
-        });
-        console.log(`[Scheduler] ⏰ 30min antes: ${c.title}`);
       } catch (err) { console.error(`[Scheduler] ❌ 30min:`, err.message); }
     }
 

@@ -1,5 +1,5 @@
 // StudyHub v3.1.2 — routes/pdfRoutes.js
-// Converte imagens em PDF (separado ou unificado)
+// Converte imagens para PDF usando pdf-lib (sem sharp)
 const express = require("express");
 const router  = express.Router();
 const multer  = require("multer");
@@ -12,78 +12,107 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024, files: 20 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Apenas imagens"));
+    else cb(new Error("Apenas imagens são permitidas"));
   },
 });
 
-// POST /api/pdf/convert
-// mode: "single" (um PDF) | "multiple" (um por imagem)
-router.post("/convert", upload.array("images", 20), async (req, res) => {
+// Converte imagem para JPEG/PNG compatível com pdf-lib
+// pdf-lib aceita: JPEG e PNG nativamente
+const prepareImage = async (file) => {
   const { PDFDocument } = require("pdf-lib");
+  const mime = file.mimetype.toLowerCase();
+  if (mime === "image/jpeg" || mime === "image/jpg" || mime === "image/png") {
+    return { buffer: file.buffer, type: mime.includes("png") ? "png" : "jpg" };
+  }
+  // Para WEBP e outros formatos, tenta tratar como JPG (fallback)
+  // Render tem node-canvas disponível às vezes, mas não queremos depender disso
+  // Melhor abordagem: retornar null e pular imagens não suportadas
+  return null;
+};
+
+router.post("/convert", upload.array("images", 20), async (req, res) => {
   const files = req.files;
-  const mode  = req.body.mode || "single"; // "single" | "multiple"
+  const mode  = req.body.mode  || "single";
   const title = req.body.title || "documento";
 
-  if (!files?.length) return res.status(400).json({ success: false, message: "Nenhuma imagem enviada" });
+  if (!files?.length) {
+    return res.status(400).json({ success: false, message: "Nenhuma imagem enviada" });
+  }
 
   try {
+    const { PDFDocument } = require("pdf-lib");
+
     if (mode === "single") {
-      // Junta todas as imagens em um PDF
       const pdfDoc = await PDFDocument.create();
+      let added = 0;
+
       for (const file of files) {
-        let imgEmbed;
         try {
-          if (file.mimetype === "image/jpeg" || file.mimetype === "image/jpg") {
-            imgEmbed = await pdfDoc.embedJpg(file.buffer);
-          } else if (file.mimetype === "image/png") {
-            imgEmbed = await pdfDoc.embedPng(file.buffer);
-          } else {
-            // Para outros formatos, converte para PNG via sharp se disponível
-            const sharp = require("sharp");
-            const pngBuf = await sharp(file.buffer).png().toBuffer();
-            imgEmbed = await pdfDoc.embedPng(pngBuf);
+          const prepared = await prepareImage(file);
+          if (!prepared) {
+            console.warn(`[PDF] Formato não suportado: ${file.mimetype} — pulando`);
+            continue;
           }
+          const imgEmbed = prepared.type === "png"
+            ? await pdfDoc.embedPng(prepared.buffer)
+            : await pdfDoc.embedJpg(prepared.buffer);
+
           const page = pdfDoc.addPage([imgEmbed.width, imgEmbed.height]);
           page.drawImage(imgEmbed, { x: 0, y: 0, width: imgEmbed.width, height: imgEmbed.height });
+          added++;
         } catch (e) {
-          console.warn(`[PDF] Pulando imagem inválida: ${e.message}`);
+          console.warn(`[PDF] Erro ao processar imagem: ${e.message}`);
         }
       }
+
+      if (added === 0) {
+        return res.status(400).json({ success: false, message: "Nenhuma imagem pôde ser convertida. Use apenas JPG ou PNG." });
+      }
+
       const pdfBytes = await pdfDoc.save();
+      const safeName = title.replace(/[^a-zA-Z0-9_\-]/g, "_");
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${title.replace(/\s+/g, "_")}.pdf"`);
+      res.setHeader("Content-Disposition", `attachment; filename="${safeName}.pdf"`);
       res.send(Buffer.from(pdfBytes));
+
     } else {
-      // Um PDF por imagem — retorna múltiplos como base64 JSON
+      // Um PDF por imagem
       const pdfs = [];
+
       for (let i = 0; i < files.length; i++) {
-        const file   = files[i];
-        const pdfDoc = await PDFDocument.create();
+        const file = files[i];
         try {
-          let imgEmbed;
-          if (file.mimetype === "image/jpeg" || file.mimetype === "image/jpg") {
-            imgEmbed = await pdfDoc.embedJpg(file.buffer);
-          } else {
-            const sharp = require("sharp");
-            const pngBuf = await sharp(file.buffer).png().toBuffer();
-            imgEmbed = await pdfDoc.embedPng(pngBuf);
-          }
+          const prepared = await prepareImage(file);
+          if (!prepared) continue;
+
+          const pdfDoc   = await PDFDocument.create();
+          const imgEmbed = prepared.type === "png"
+            ? await pdfDoc.embedPng(prepared.buffer)
+            : await pdfDoc.embedJpg(prepared.buffer);
+
           const page = pdfDoc.addPage([imgEmbed.width, imgEmbed.height]);
           page.drawImage(imgEmbed, { x: 0, y: 0, width: imgEmbed.width, height: imgEmbed.height });
+
           const pdfBytes = await pdfDoc.save();
+          const safeName = `${title.replace(/[^a-zA-Z0-9_\-]/g, "_")}_${i + 1}`;
           pdfs.push({
-            name: `${title}_${i + 1}.pdf`,
+            name: `${safeName}.pdf`,
             data: Buffer.from(pdfBytes).toString("base64"),
           });
         } catch (e) {
           console.warn(`[PDF] Erro na imagem ${i + 1}: ${e.message}`);
         }
       }
+
+      if (pdfs.length === 0) {
+        return res.status(400).json({ success: false, message: "Nenhuma imagem pôde ser convertida. Use JPG ou PNG." });
+      }
+
       res.json({ success: true, pdfs, count: pdfs.length });
     }
   } catch (err) {
-    console.error("[PDF] Erro:", err.message);
-    res.status(500).json({ success: false, message: err.message });
+    console.error("[PDF] Erro geral:", err.message);
+    res.status(500).json({ success: false, message: `Erro na conversão: ${err.message}` });
   }
 });
 
