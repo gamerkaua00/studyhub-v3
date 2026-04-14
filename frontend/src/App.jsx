@@ -15,6 +15,7 @@ import GalleryPage   from "./pages/GalleryPage";
 import StatsPage     from "./pages/StatsPage";
 import PdfPage       from "./pages/PdfPage";
 import FaultsPage    from "./pages/FaultsPage";
+import WebhooksPage  from "./pages/WebhooksPage";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -46,6 +47,7 @@ function AppRoutes() {
       <Route path="/estatisticas"    element={<ProtectedRoute><Layout><StatsPage /></Layout></ProtectedRoute>} />
       <Route path="/pdf"             element={<ProtectedRoute><Layout><PdfPage /></Layout></ProtectedRoute>} />
       <Route path="/faltas"          element={<AdminRoute><Layout><FaultsPage /></Layout></AdminRoute>} />
+      <Route path="/webhooks"        element={<AdminRoute><Layout><WebhooksPage /></Layout></AdminRoute>} />
       <Route path="/cadastros"      element={<AdminRoute><Layout><PendingUsers /></Layout></AdminRoute>} />
       <Route path="*"               element={<Navigate to="/" replace />} />
     </Routes>

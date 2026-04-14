@@ -9,7 +9,7 @@ const http     = require("http");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
-const VER  = "3.1.3";
+const VER  = "3.2.0";
 
 app.use(cors({
   origin: [
@@ -36,6 +36,7 @@ app.use("/api/events",     require("./routes/eventRoutes"));
 app.use("/api/stats",      require("./routes/statsRoutes"));
 app.use("/api/pdf",        require("./routes/pdfRoutes"));
 app.use("/api/faults",     require("./routes/faultRoutes"));
+app.use("/api/webhooks",   require("./routes/webhookRoutes"));
 
 app.get("/health", (req, res) =>
   res.json({ status: "ok", version: VER, uptime: Math.floor(process.uptime()), ts: new Date().toISOString() })

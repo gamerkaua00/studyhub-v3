@@ -5,10 +5,17 @@ const REPO_NAME = "studyhub-v3";
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === "production" ? `/${REPO_NAME}/` : "/",
-  build: { outDir: "dist", sourcemap: false },
-  server: {
-    port: 5173,
-    proxy: { "/api": { target: "http://localhost:3001", changeOrigin: true } },
+  base: `/${REPO_NAME}/`,
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          dateFns: ["date-fns"],
+        },
+      },
+    },
   },
 });

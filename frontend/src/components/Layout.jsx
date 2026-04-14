@@ -24,6 +24,7 @@ export default function Layout({ children }) {
     "/estatisticas": "Estatísticas",
     "/pdf":           "Converter para PDF",
     "/faltas":        "Controle de Faltas",
+    "/webhooks":      "Webhooks Discord",
     "/cadastros":   "Cadastros",
   };
   const pageName = PAGE_NAMES[location.pathname] || "StudyHub";
@@ -55,6 +56,7 @@ export default function Layout({ children }) {
     { to: "/estatisticas", icon: "📊",  label: "Estatísticas" },
     { to: "/pdf",          icon: "📄",  label: "Img → PDF"    },
     ...(isAdmin() ? [{ to: "/faltas", icon: "📋", label: "Faltas" }] : []),
+    ...(isAdmin() ? [{ to: "/webhooks", icon: "🔗", label: "Webhooks" }] : []),
     { section: "Sistema" },
     ...(isAdmin() ? [{ to: "/cadastros", icon: "🔔", label: "Cadastros", badge: pendingCount }] : []),
     { external: true, href: "#", icon: "👁️", label: "Agenda Pública" },
